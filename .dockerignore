@@ -1,0 +1,16 @@
+.git
+.gitignore
+.dockerignore
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+.env
+docker-compose.override.yml
+docker-compose.override.yaml
+build/
+dist/
+wheels/
+*.egg-info
