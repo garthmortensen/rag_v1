@@ -9,9 +9,8 @@ This project uses [`uv`](https://github.com/astral-sh/uv) for fast python depend
 ### Installation
 
 1. **Install uv**:
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+
+https://github.com/astral-sh/uv?tab=readme-ov-file#installation
 
 2. **Sync dependencies**:
    ```bash
@@ -19,7 +18,7 @@ This project uses [`uv`](https://github.com/astral-sh/uv) for fast python depend
    ```
    This will create a virtual environment in `.venv` and install the dependencies specified in `pyproject.toml`.
 
-3. **Activate environment** (optional):
+3. **Activate environment**:
    ```bash
    source .venv/bin/activate
    ```
