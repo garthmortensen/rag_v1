@@ -151,7 +151,7 @@ def download_files():
                     polite_sleep(MIN_DELAY, MAX_DELAY)
 
                 except Exception as e:
-                    result_status = f"[red]Failed[/red]"
+                    result_status = "[red]Failed[/red]"
                     console.print(f"  [red]Error:[/red] {e}")
 
             results.append(
