@@ -18,3 +18,7 @@ docker-compose.override.yaml
 # Editor
 .vscode/
 *.code-workspace
+
+# download directory
+corpus/raw_data/
+corpus/download.log
