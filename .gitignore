@@ -21,3 +21,4 @@ docker-compose.override.yaml
 
 # download directory
 corpus/raw_data/
+corpus/download.log
