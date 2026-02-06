@@ -5,11 +5,11 @@
 - [x] Configure code quality tools (`ruff`)
 - [x] Set up testing framework (`pytest`)
 - [x] Establish CI/CD pipeline (GitHub Actions)
-- [ ] Define initial list of data sources (e.g., Federal Reserve DFAST/CCAR instructions, EBA guidelines)
+- [x] Define initial list of data sources (e.g., Federal Reserve DFAST/CCAR instructions, EBA guidelines)
 - [ ] Ensure project works across different OS (Linux, Windows) with CI/CD
 
 ## Phase 2: get & process data
-- [ ] Build scrapers for public stress testing documentation (PDFs/HTML/TXT)
+- [x] Build scrapers for public stress testing documentation (PDFs/HTML/TXT)
 - [ ] Implement text extraction pipeline
 - [ ] Design chunking strategy for long docs
 - [ ] Implement metadata extraction (year, document type, source)

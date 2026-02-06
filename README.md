@@ -49,28 +49,13 @@ uv run pytest
 
 This project uses [Commitizen](https://commitizen-tools.github.io/commitizen/) to standardize commit messages, automate versioning, and generate changelogs.
 
-#### 1. Committing
+## Data Acquisition
 
-Use the following command instead of `git commit` to launch the interactive wizard:
+To download the stress testing corpus:
 
-```bash
-uv run cz commit
-```
-
-This creates structured commit messages (e.g., `feat: ...`, `fix: ...`) required for semantic versioning.
-
-#### 2. Collaboration (Branches)
-
-When working on features or fixes:
-1. Create a branch (e.g., `feat/data-ingestion`, `fix/broken-link`).
-2. Make your edits.
-3. Commit using `uv run cz commit`.
-4. Push and open a Pull Request against `main`.
-
-#### 3. Releasing & Changelog
-
-To bump the version, update `CHANGELOG.md`, and create a tag based on commit history:
-
-```bash
-uv run cz bump
-```
+1. **Run the downloader**:
+   ```bash
+   uv run download_data.py
+   ```
+   This script reads from `corpus/data_sources.csv` and downloads files to `corpus/raw_data/`.
+   A summary log will be saved to `corpus/download.log`.
