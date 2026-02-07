@@ -4,6 +4,10 @@ import time
 import requests
 import random
 import re
+from datetime import datetime, timezone
+from urllib.parse import urlparse
+
+import base32_crockford
 from rich.console import Console
 from rich.progress import (
     Progress,
@@ -19,8 +23,21 @@ from rich.panel import Panel
 DEFAULT_CSV = "corpus/data_sources.csv"
 DEFAULT_DIR = "corpus/raw_data"
 LOG_FILE = "corpus/download.log"
+METADATA_CSV = "corpus/metadata.csv"
+METADATA_FIELDS = [
+    "doc_id",
+    "source_type",
+    "source_url",
+    "local_path",
+    "title",
+    "author",
+    "retrieved_at",
+    "last_modified_at",
+]
 MIN_DELAY = 1
 MAX_DELAY = 3
+
+_doc_id_counter = 0
 
 console = Console()
 
@@ -63,6 +80,47 @@ def get_headers():
     }
 
 
+def generate_doc_id():
+    """Generate a unique Crockford Base32 doc_id from timestamp + counter."""
+    global _doc_id_counter
+    ts = int(datetime.now(timezone.utc).timestamp() * 1000)  # eg 1685625600000 for 2023-06-01T00:00:00Z
+    unique_int = ts * 1000 + _doc_id_counter  # eg 1685625600000000 + counter
+    _doc_id_counter += 1
+    return base32_crockford.encode(unique_int)  # eg "3W5E11264SGS" for 1685625600000000
+
+
+def extract_author(url):
+    """Derive author/publisher from the URL domain."""
+    domain_map = {
+        "federalreserve.gov": "Federal Reserve",
+    }
+    hostname = urlparse(url).hostname or ""
+    for domain, author in domain_map.items():
+        if hostname.endswith(domain):
+            return author
+    return hostname or "Unknown"
+
+
+def load_existing_metadata(path):
+    """Load existing metadata CSV into a dict keyed by local_path."""
+    metadata = {}
+    if os.path.exists(path):
+        with open(path, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                metadata[row["local_path"]] = row
+    return metadata
+
+
+def save_metadata(metadata, path):
+    """Write metadata dict to CSV, sorted by doc_id."""
+    rows = sorted(metadata.values(), key=lambda r: r["doc_id"])
+    with open(path, mode="w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=METADATA_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def construct_filepath(base_dir, category, name, filetype):
     # Flatten structure: all files go directly into base_dir
     # We include the category in the filename to keep them organized and unique
@@ -94,9 +152,11 @@ def download_files():
 
     ensure_directory(DEFAULT_DIR)
     headers = get_headers()
+    metadata = load_existing_metadata(METADATA_CSV)
 
     results = []
 
+    # read the CSV file which maps corpus and links
     try:
         with open(DEFAULT_CSV, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
@@ -120,6 +180,7 @@ def download_files():
     with Progress(*progress_layout, console=console) as progress:
         task_id = progress.add_task("Processing...", total=len(rows))
 
+        # step through each row in csv and download the file if it doesn't exist, then update progress bar
         for row in rows:
             category = row.get("Category", "Uncategorized").strip()
             name = row.get("Name", "Unknown").strip()
@@ -130,11 +191,13 @@ def download_files():
                 progress.advance(task_id)
                 continue
 
+            # this is used for both the download path and the metadata entry, so we want it before we check for existing file
             filepath = construct_filepath(DEFAULT_DIR, category, name, filetype)
             result_status = "Unknown"
 
             progress.update(task_id, description=f"Processing: [bold]{name}[/bold]")
 
+            # Check if the file marked for download already exists
             if os.path.exists(filepath):
                 result_status = "[yellow]Skipped (Exists)[/yellow]"
                 console.print(f"  Existing: {name}")
@@ -147,6 +210,25 @@ def download_files():
                         out_file.write(response.content)
                     result_status = "[green]Downloaded[/green]"
 
+                    # Capture metadata
+                    last_modified_raw = response.headers.get("Last-Modified", "")
+                    if last_modified_raw:
+                        last_modified = datetime.strptime(
+                            last_modified_raw, "%a, %d %b %Y %H:%M:%S %Z"
+                        ).strftime("%Y%m%d%H%M%S")
+                    else:
+                        last_modified = ""
+                    metadata[filepath] = {
+                        "doc_id": generate_doc_id(),
+                        "source_type": filetype,
+                        "source_url": url,
+                        "local_path": filepath,
+                        "title": name,
+                        "author": extract_author(url),
+                        "retrieved_at": datetime.now(timezone.utc).strftime("%Y%m%d%H%M"),
+                        "last_modified_at": last_modified,
+                    }
+
                     # Only sleep if we actually downloaded something
                     polite_sleep(MIN_DELAY, MAX_DELAY)
 
@@ -158,6 +240,10 @@ def download_files():
                 {"name": name, "category": category, "status": result_status}
             )
             progress.advance(task_id)
+
+    # Save metadata
+    save_metadata(metadata, METADATA_CSV)
+    console.print(f"Metadata saved to: [bold]{METADATA_CSV}[/bold]")
 
     # Final Summary Table
     console.print("\n")
@@ -180,6 +266,7 @@ def download_files():
     console.print(
         f"\n[green]Job Complete.[/green] Files saved to: [bold]{DEFAULT_DIR}[/bold]"
     )
+    console.print(f"Metadata saved to: [bold]{METADATA_CSV}[/bold]")
     console.print(f"Summary saved to: [bold]{LOG_FILE}[/bold]")
 
 

@@ -20,6 +20,15 @@ wheels = [
 ]
 
 [[package]]
+name = "base32-crockford"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a8/e7/868d9b106ffb86ebf1eb877517e03ac87667ce5ce201547fa3a26090c1ba/base32-crockford-0.3.0.tar.gz", hash = "sha256:115f5bd32ae32b724035cb02eb65069a8824ea08c08851eb80c8b9f63443a969", size = 4538, upload-time = "2015-03-19T22:00:21.687Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4d/6f/7ad1176c56c920e9841b14923f81545a4243876628312f143915561770d2/base32_crockford-0.3.0-py2.py3-none-any.whl", hash = "sha256:295ef5ffbf6ed96b6e739ffd36be98fa7e90a206dd18c39acefb15777eedfe6e", size = 5050, upload-time = "2015-03-19T22:00:34.116Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -439,6 +448,7 @@ name = "rag-stress-testing"
 version = "0.2.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "base32-crockford" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pytest" },
@@ -454,6 +464,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "base32-crockford", specifier = ">=0.3.0" },
     { name = "numpy", specifier = ">=2.4.2" },
     { name = "pandas", specifier = ">=3.0.0" },
     { name = "pytest", specifier = ">=9.0.2" },
