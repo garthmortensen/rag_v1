@@ -1,3 +1,9 @@
+## 0.3.0 (2026-02-06)
+
+### Feat
+
+- **metadata**: capture additional metadata
+
 ## 0.2.0 (2026-02-05)
 
 ### Feat
