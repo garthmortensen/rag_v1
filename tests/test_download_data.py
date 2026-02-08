@@ -80,7 +80,7 @@ class TestDownloadData(unittest.TestCase):
     @patch("download_data.save_metadata")
     @patch("download_data.load_existing_metadata", return_value={})
     @patch("download_data.polite_sleep")
-    @patch("download_data.requests.get")
+    @patch("download_data.get_session")
     @patch("download_data.os.path.exists")
     @patch("download_data.ensure_directory")
     @patch(
@@ -93,7 +93,7 @@ class TestDownloadData(unittest.TestCase):
         mock_file,
         mock_ensure,
         mock_exists,
-        mock_get,
+        mock_get_session,
         mock_sleep,
         mock_load_meta,
         mock_save_meta,
@@ -104,17 +104,21 @@ class TestDownloadData(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.content = b"fake pdf content"
         mock_response.raise_for_status = MagicMock()
-        mock_response.headers = {"Last-Modified": "Wed, 01 Jan 2026 00:00:00 GMT"}
-        mock_get.return_value = mock_response
+        mock_response.headers = {
+            "Last-Modified": "Wed, 01 Jan 2026 00:00:00 GMT",
+            "Content-Type": "application/pdf",
+            "Content-Length": "16",
+        }
+        mock_session = MagicMock()
+        mock_session.get.return_value = mock_response
+        mock_get_session.return_value = mock_session
 
         # Execute
         download_data.download_files()
 
         # Assertions
         mock_ensure.assert_called_with(download_data.DEFAULT_DIR)
-        mock_get.assert_called_with(
-            "http://example.com", headers=download_data.get_headers(), timeout=30
-        )
+        mock_session.get.assert_called_with("http://example.com", timeout=30)
 
         expected_path = os.path.join(download_data.DEFAULT_DIR, "testcat_testdoc.pdf")
         file_handle = mock_file()
@@ -127,12 +131,16 @@ class TestDownloadData(unittest.TestCase):
         self.assertIn(expected_path, saved_metadata)
         self.assertEqual(saved_metadata[expected_path]["source_type"], "pdf")
         self.assertEqual(saved_metadata[expected_path]["title"], "TestDoc")
+        self.assertEqual(
+            saved_metadata[expected_path]["content_type"], "application/pdf"
+        )
+        self.assertEqual(saved_metadata[expected_path]["content_length_bytes"], "16")
 
     @patch("download_data.save_metadata")
     @patch("download_data.load_existing_metadata", return_value={})
     @patch("download_data.os.path.getmtime", return_value=1735689600.0)
     @patch("download_data.console.print")
-    @patch("download_data.requests.get")
+    @patch("download_data.get_session")
     @patch("download_data.os.path.exists")
     @patch(
         "builtins.open",
@@ -140,18 +148,31 @@ class TestDownloadData(unittest.TestCase):
         read_data="Category,Name,Link,Filetype\nTestCat,SkippedDoc,http://example.com,pdf",
     )
     def test_download_files_skipping(
-        self, mock_file, mock_exists, mock_get, mock_print, mock_getmtime, mock_load_meta, mock_save_meta
+        self, mock_file, mock_exists, mock_get_session, mock_print, mock_getmtime, mock_load_meta, mock_save_meta
     ):
         # Setup: File exists
         mock_exists.return_value = True
+        mock_session = MagicMock()
+        mock_get_session.return_value = mock_session
 
         # Execute
         download_data.download_files()
 
         # Assertions
-        mock_get.assert_not_called()  # Should not download
+        mock_session.get.assert_not_called()  # Should not download
         # Logic prints "Skipped (Exists)" or similar
         # We can check if console log captured it, but mock_get not called is the main proof.
+
+    def test_get_session_has_retry(self):
+        session = download_data.get_session()
+        adapter = session.get_adapter("https://example.com")
+        self.assertEqual(adapter.max_retries.total, download_data.RETRY_TOTAL)
+        self.assertEqual(
+            adapter.max_retries.backoff_factor, download_data.RETRY_BACKOFF_FACTOR
+        )
+        self.assertEqual(
+            adapter.max_retries.status_forcelist, download_data.RETRY_STATUS_FORCELIST
+        )
 
 
 class TestGenerateDocId(unittest.TestCase):
@@ -168,9 +189,9 @@ class TestGenerateDocId(unittest.TestCase):
 class TestExtractAuthor(unittest.TestCase):
     def test_federal_reserve(self):
         url = "https://www.federalreserve.gov/some/path.pdf"
-        self.assertEqual(download_data.extract_author(url), "Federal Reserve Board")
+        self.assertEqual(download_data.extract_author(url), "www.federalreserve.gov")
 
-    def test_unknown_domain(self):
+    def test_other_domain(self):
         url = "https://example.com/file.csv"
         self.assertEqual(download_data.extract_author(url), "example.com")
 
@@ -196,6 +217,8 @@ class TestMetadataPersistence(unittest.TestCase):
                     "author": "Test Author",
                     "retrieved_at": "2026-01-01T00:00:00+00:00",
                     "last_modified_at": "",
+                    "content_type": "application/pdf",
+                    "content_length_bytes": "12345",
                 },
                 "path/b.csv": {
                     "doc_id": "A",
@@ -206,6 +229,8 @@ class TestMetadataPersistence(unittest.TestCase):
                     "author": "Test Author",
                     "retrieved_at": "2026-01-02T00:00:00+00:00",
                     "last_modified_at": "Wed, 01 Jan 2026 00:00:00 GMT",
+                    "content_type": "text/csv",
+                    "content_length_bytes": "6789",
                 },
             }
 
@@ -241,6 +266,8 @@ class TestMetadataPersistence(unittest.TestCase):
                     "author": "",
                     "retrieved_at": "",
                     "last_modified_at": "",
+                    "content_type": "",
+                    "content_length_bytes": "",
                 },
                 "path/a.pdf": {
                     "doc_id": "A",
@@ -251,6 +278,8 @@ class TestMetadataPersistence(unittest.TestCase):
                     "author": "",
                     "retrieved_at": "",
                     "last_modified_at": "",
+                    "content_type": "",
+                    "content_length_bytes": "",
                 },
             }
 

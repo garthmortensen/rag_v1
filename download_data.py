@@ -7,6 +7,9 @@ import re
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 import base32_crockford
 from rich.console import Console
 from rich.progress import (
@@ -33,9 +36,14 @@ METADATA_FIELDS = [
     "author",
     "retrieved_at",
     "last_modified_at",
+    "content_type",
+    "content_length_bytes",
 ]
 MIN_DELAY = 1
 MAX_DELAY = 3
+RETRY_TOTAL = 3
+RETRY_BACKOFF_FACTOR = 1  # sleeps 1s, 2s, 4s between retries
+RETRY_STATUS_FORCELIST = [429, 500, 502, 503, 504]
 
 _doc_id_counter = 0
 
@@ -50,7 +58,6 @@ def print_ascii_banner():
     ▛▌▛▌▌▌▌▛▌▐ ▛▌▀▌▛▌  ▛▌▀▌▜▘▀▌
     ▙▌▙▌▚▚▘▌▌▐▖▙▌█▌▙▌▄▖▙▌█▌▐▖█▌
 [/bold deep_sky_blue1]
- [grey70]Federal Reserve Data Acquisition [/grey70]
  --------------------------------
 """,
             border_style="grey39",
@@ -80,6 +87,22 @@ def get_headers():
     }
 
 
+def get_session():
+    """Build a requests Session with retry and exponential backoff."""
+    session = requests.Session()
+    retry = Retry(
+        total=RETRY_TOTAL,  # Total number of retries
+        backoff_factor=RETRY_BACKOFF_FACTOR,  # Exponential backoff factor
+        status_forcelist=RETRY_STATUS_FORCELIST,  # HTTP status codes to trigger a retry
+        allowed_methods=["GET"],
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+
 def generate_doc_id():
     """Generate a unique Crockford Base32 doc_id from timestamp + counter."""
     global _doc_id_counter
@@ -91,14 +114,7 @@ def generate_doc_id():
 
 def extract_author(url):
     """Derive author/publisher from the URL domain."""
-    domain_map = {
-        "federalreserve.gov": "Federal Reserve",
-    }
-    hostname = urlparse(url).hostname or ""
-    for domain, author in domain_map.items():
-        if hostname.endswith(domain):
-            return author
-    return hostname or "Unknown"
+    return urlparse(url).hostname or "Unknown"
 
 
 def load_existing_metadata(path):
@@ -121,6 +137,29 @@ def save_metadata(metadata, path):
         writer.writerows(rows)
 
 
+def capture_metadata(response, filepath, filetype, url, name):
+    """Build a metadata dict from a successful download response."""
+    last_modified_raw = response.headers.get("Last-Modified", "")
+    if last_modified_raw:
+        last_modified = datetime.strptime(
+            last_modified_raw, "%a, %d %b %Y %H:%M:%S %Z"
+        ).strftime("%Y%m%d%H%M%S")
+    else:
+        last_modified = ""
+    return {
+        "doc_id": generate_doc_id(),
+        "source_type": filetype,
+        "source_url": url,
+        "local_path": filepath,
+        "title": name,
+        "author": extract_author(url),
+        "retrieved_at": datetime.now(timezone.utc).strftime("%Y%m%d%H%M"),
+        "last_modified_at": last_modified,
+        "content_type": response.headers.get("Content-Type", ""),
+        "content_length_bytes": response.headers.get("Content-Length", ""),
+    }
+
+
 def construct_filepath(base_dir, category, name, filetype):
     # Flatten structure: all files go directly into base_dir
     # We include the category in the filename to keep them organized and unique
@@ -137,14 +176,34 @@ def polite_sleep(min_d, max_d):
     steps = int(sleep_time * 10)  # Update every 0.1s
 
     with console.status(
-        f"[yellow]Cooling down for {sleep_time:.1f}s...[/yellow]"
+        f"[yellow]Politely pausing for {sleep_time:.1f}s...[/yellow]"
     ) as status:
         for _ in range(steps):
             time.sleep(0.1)
             sleep_time -= 0.1
             status.update(
-                f"[yellow]Cooling down: {max(0, sleep_time):.1f}s...[/yellow]"
+                f"[yellow]Politely pausing for: {max(0, sleep_time):.1f}s...[/yellow]"
             )
+
+
+def save_summary(results):
+    """Print and log the download summary table."""
+    console.print("\n")
+    table = Table(
+        title="Download Summary", show_header=True, header_style="bold magenta"
+    )
+    table.add_column("Category", style="cyan")
+    table.add_column("Document Name", style="white")
+    table.add_column("Status", justify="right")
+
+    for res in results:
+        table.add_row(res["category"], res["name"], res["status"])
+
+    console.print(table)
+
+    with open(LOG_FILE, "w", encoding="utf-8") as f:
+        file_console = Console(file=f, force_terminal=False)
+        file_console.print(table)
 
 
 def download_files():
@@ -152,6 +211,8 @@ def download_files():
 
     ensure_directory(DEFAULT_DIR)
     headers = get_headers()
+    session = get_session()
+    session.headers.update(headers)
     metadata = load_existing_metadata(METADATA_CSV)
 
     results = []
@@ -199,35 +260,20 @@ def download_files():
 
             # Check if the file marked for download already exists
             if os.path.exists(filepath):
-                result_status = "[yellow]Skipped (Exists)[/yellow]"
-                console.print(f"  Existing: {name}")
+                result_status = "[yellow]Skipped (Existed)[/yellow]"
+                console.print(f"  Exists: {name}")
             else:
                 try:
                     console.print(f"  Downloading: {name}...")
-                    response = requests.get(url, headers=headers, timeout=30)
+                    response = session.get(url, timeout=30)
                     response.raise_for_status()
                     with open(filepath, "wb") as out_file:
                         out_file.write(response.content)
                     result_status = "[green]Downloaded[/green]"
 
-                    # Capture metadata
-                    last_modified_raw = response.headers.get("Last-Modified", "")
-                    if last_modified_raw:
-                        last_modified = datetime.strptime(
-                            last_modified_raw, "%a, %d %b %Y %H:%M:%S %Z"
-                        ).strftime("%Y%m%d%H%M%S")
-                    else:
-                        last_modified = ""
-                    metadata[filepath] = {
-                        "doc_id": generate_doc_id(),
-                        "source_type": filetype,
-                        "source_url": url,
-                        "local_path": filepath,
-                        "title": name,
-                        "author": extract_author(url),
-                        "retrieved_at": datetime.now(timezone.utc).strftime("%Y%m%d%H%M"),
-                        "last_modified_at": last_modified,
-                    }
+                    metadata[filepath] = capture_metadata(
+                        response, filepath, filetype, url, name
+                    )
 
                     # Only sleep if we actually downloaded something
                     polite_sleep(MIN_DELAY, MAX_DELAY)
@@ -246,22 +292,7 @@ def download_files():
     console.print(f"Metadata saved to: [bold]{METADATA_CSV}[/bold]")
 
     # Final Summary Table
-    console.print("\n")
-    table = Table(
-        title="Download Summary", show_header=True, header_style="bold magenta"
-    )
-    table.add_column("Category", style="cyan")
-    table.add_column("Document Name", style="white")
-    table.add_column("Status", justify="right")
-
-    for res in results:
-        table.add_row(res["category"], res["name"], res["status"])
-
-    console.print(table)
-
-    with open(LOG_FILE, "w", encoding="utf-8") as f:
-        file_console = Console(file=f, force_terminal=False)
-        file_console.print(table)
+    save_summary(results)
 
     console.print(
         f"\n[green]Job Complete.[/green] Files saved to: [bold]{DEFAULT_DIR}[/bold]"
