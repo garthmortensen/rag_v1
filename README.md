@@ -58,7 +58,7 @@ To download the stress testing corpus:
 
 1. **Run the downloader**:
    ```bash
-   uv run download_data.py
+   uv run src/ingestion/downloader.py
    ```
    This script reads from `corpus/data_sources.csv` and downloads files to `corpus/raw_data/`.
    A summary log will be saved to `corpus/download.log`.

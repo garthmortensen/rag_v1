@@ -4,85 +4,85 @@ import tempfile
 import unittest
 from unittest.mock import patch, mock_open, MagicMock
 
-# Ensure we can import the module from the parent directory
+# Ensure we can import the module from the project root
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import download_data
+from src.ingestion import downloader
 
 
 class TestDownloadData(unittest.TestCase):
     def test_sanitize_filename(self):
-        self.assertEqual(download_data.sanitize_filename("Simple Name"), "simple_name")
+        self.assertEqual(downloader.sanitize_filename("Simple Name"), "simple_name")
         self.assertEqual(
-            download_data.sanitize_filename("Name with @#$%^& chars"), "name_with_chars"
+            downloader.sanitize_filename("Name with @#$%^& chars"), "name_with_chars"
         )
         self.assertEqual(
-            download_data.sanitize_filename("   Trailing Spaces   "), "trailing_spaces"
+            downloader.sanitize_filename("   Trailing Spaces   "), "trailing_spaces"
         )
         self.assertEqual(
-            download_data.sanitize_filename("multiple__underscores"),
+            downloader.sanitize_filename("multiple__underscores"),
             "multiple_underscores",
         )
         self.assertEqual(
-            download_data.sanitize_filename("dashes-and-spaces"), "dashes_and_spaces"
+            downloader.sanitize_filename("dashes-and-spaces"), "dashes_and_spaces"
         )
 
     def test_construct_filepath(self):
         # Depending on OS, path separator might differ. usage of os.path.join handles it.
         expected = os.path.join("data", "category_name.csv")
-        result = download_data.construct_filepath("data", "Category", "Name", "csv")
+        result = downloader.construct_filepath("data", "Category", "Name", "csv")
         self.assertEqual(result, expected)
 
         # Test with messy inputs
         expected_messy = os.path.join("raw", "my_cat_my_file.html")
-        result_messy = download_data.construct_filepath(
+        result_messy = downloader.construct_filepath(
             "raw", "My Cat!", " My File ", "html"
         )
         self.assertEqual(result_messy, expected_messy)
 
     def test_get_headers(self):
-        headers = download_data.get_headers()
+        headers = downloader.get_headers()
         self.assertIsInstance(headers, dict)
         self.assertIn("User-Agent", headers)
         self.assertTrue(len(headers["User-Agent"]) > 0)
 
-    @patch("download_data.os.makedirs")
-    @patch("download_data.os.path.exists")
+    @patch("src.ingestion.downloader.os.makedirs")
+    @patch("src.ingestion.downloader.os.path.exists")
     def test_ensure_directory_creates_if_not_exists(self, mock_exists, mock_makedirs):
         mock_exists.return_value = False
-        download_data.ensure_directory("new_dir")
+        downloader.ensure_directory("new_dir")
         mock_makedirs.assert_called_once_with("new_dir")
 
-    @patch("download_data.os.makedirs")
-    @patch("download_data.os.path.exists")
+    @patch("src.ingestion.downloader.os.makedirs")
+    @patch("src.ingestion.downloader.os.path.exists")
     def test_ensure_directory_does_nothing_if_exists(self, mock_exists, mock_makedirs):
         mock_exists.return_value = True
-        download_data.ensure_directory("existing_dir")
+        downloader.ensure_directory("existing_dir")
         mock_makedirs.assert_not_called()
 
-    @patch("download_data.save_metadata")
-    @patch("download_data.load_existing_metadata", return_value={})
-    @patch("download_data.console.print")  # Mock console to keep output clean
+    @patch("src.ingestion.downloader.save_metadata")
+    @patch("src.ingestion.downloader.load_existing_metadata", return_value={})
+    @patch("src.ingestion.downloader.console.print")  # Mock console to keep output clean
     @patch("builtins.open", new_callable=mock_open)
-    @patch("download_data.os.path.exists")
+    @patch("src.ingestion.downloader.os.path.exists")
     def test_download_files_no_csv(
         self, mock_exists, mock_file, mock_print, mock_load_meta, mock_save_meta
     ):
         # Simulate FileNotFoundError when opening the CSV
         mock_file.side_effect = FileNotFoundError
 
-        download_data.download_files()
+        downloader.download_files()
 
         # Should print error message
         print_calls = [str(call) for call in mock_print.mock_calls]
         self.assertTrue(any("CSV file not found" in c for c in print_calls))
 
-    @patch("download_data.save_metadata")
-    @patch("download_data.load_existing_metadata", return_value={})
-    @patch("download_data.polite_sleep")
-    @patch("download_data.get_session")
-    @patch("download_data.os.path.exists")
-    @patch("download_data.ensure_directory")
+    @patch("src.ingestion.downloader.save_metadata")
+    @patch("src.ingestion.downloader.load_existing_metadata", return_value={})
+    @patch("src.ingestion.downloader.polite_sleep")
+    @patch("src.ingestion.downloader.get_session")
+    @patch("src.ingestion.downloader.os.path.exists")
+    @patch("src.ingestion.downloader.ensure_directory")
     @patch(
         "builtins.open",
         new_callable=mock_open,
@@ -114,13 +114,13 @@ class TestDownloadData(unittest.TestCase):
         mock_get_session.return_value = mock_session
 
         # Execute
-        download_data.download_files()
+        downloader.download_files()
 
         # Assertions
-        mock_ensure.assert_called_with(download_data.DEFAULT_DIR)
+        mock_ensure.assert_called_with(downloader.DEFAULT_DIR)
         mock_session.get.assert_called_with("http://example.com", timeout=30)
 
-        expected_path = os.path.join(download_data.DEFAULT_DIR, "testcat_testdoc.pdf")
+        expected_path = os.path.join(downloader.DEFAULT_DIR, "testcat_testdoc.pdf")
         file_handle = mock_file()
         file_handle.write.assert_called()
         mock_file.assert_any_call(expected_path, "wb")
@@ -136,12 +136,12 @@ class TestDownloadData(unittest.TestCase):
         )
         self.assertEqual(saved_metadata[expected_path]["content_length_bytes"], "16")
 
-    @patch("download_data.save_metadata")
-    @patch("download_data.load_existing_metadata", return_value={})
-    @patch("download_data.os.path.getmtime", return_value=1735689600.0)
-    @patch("download_data.console.print")
-    @patch("download_data.get_session")
-    @patch("download_data.os.path.exists")
+    @patch("src.ingestion.downloader.save_metadata")
+    @patch("src.ingestion.downloader.load_existing_metadata", return_value={})
+    @patch("src.ingestion.downloader.os.path.getmtime", return_value=1735689600.0)
+    @patch("src.ingestion.downloader.console.print")
+    @patch("src.ingestion.downloader.get_session")
+    @patch("src.ingestion.downloader.os.path.exists")
     @patch(
         "builtins.open",
         new_callable=mock_open,
@@ -156,7 +156,7 @@ class TestDownloadData(unittest.TestCase):
         mock_get_session.return_value = mock_session
 
         # Execute
-        download_data.download_files()
+        downloader.download_files()
 
         # Assertions
         mock_session.get.assert_not_called()  # Should not download
@@ -164,39 +164,39 @@ class TestDownloadData(unittest.TestCase):
         # We can check if console log captured it, but mock_get not called is the main proof.
 
     def test_get_session_has_retry(self):
-        session = download_data.get_session()
+        session = downloader.get_session()
         adapter = session.get_adapter("https://example.com")
-        self.assertEqual(adapter.max_retries.total, download_data.RETRY_TOTAL)
+        self.assertEqual(adapter.max_retries.total, downloader.RETRY_TOTAL)
         self.assertEqual(
-            adapter.max_retries.backoff_factor, download_data.RETRY_BACKOFF_FACTOR
+            adapter.max_retries.backoff_factor, downloader.RETRY_BACKOFF_FACTOR
         )
         self.assertEqual(
-            adapter.max_retries.status_forcelist, download_data.RETRY_STATUS_FORCELIST
+            adapter.max_retries.status_forcelist, downloader.RETRY_STATUS_FORCELIST
         )
 
 
 class TestGenerateDocId(unittest.TestCase):
     def test_returns_string(self):
-        doc_id = download_data.generate_doc_id()
+        doc_id = downloader.generate_doc_id()
         self.assertIsInstance(doc_id, str)
         self.assertTrue(len(doc_id) > 0)
 
     def test_unique_ids(self):
-        ids = {download_data.generate_doc_id() for _ in range(100)}
+        ids = {downloader.generate_doc_id() for _ in range(100)}
         self.assertEqual(len(ids), 100)
 
 
 class TestExtractAuthor(unittest.TestCase):
     def test_federal_reserve(self):
         url = "https://www.federalreserve.gov/some/path.pdf"
-        self.assertEqual(download_data.extract_author(url), "www.federalreserve.gov")
+        self.assertEqual(downloader.extract_author(url), "www.federalreserve.gov")
 
     def test_other_domain(self):
         url = "https://example.com/file.csv"
-        self.assertEqual(download_data.extract_author(url), "example.com")
+        self.assertEqual(downloader.extract_author(url), "example.com")
 
     def test_empty_url(self):
-        self.assertEqual(download_data.extract_author(""), "Unknown")
+        self.assertEqual(downloader.extract_author(""), "Unknown")
 
 
 class TestMetadataPersistence(unittest.TestCase):
@@ -234,8 +234,8 @@ class TestMetadataPersistence(unittest.TestCase):
                 },
             }
 
-            download_data.save_metadata(metadata, tmp_path)
-            loaded = download_data.load_existing_metadata(tmp_path)
+            downloader.save_metadata(metadata, tmp_path)
+            loaded = downloader.load_existing_metadata(tmp_path)
 
             self.assertEqual(len(loaded), 2)
             self.assertIn("path/a.pdf", loaded)
@@ -246,7 +246,7 @@ class TestMetadataPersistence(unittest.TestCase):
             os.unlink(tmp_path)
 
     def test_load_nonexistent_file(self):
-        result = download_data.load_existing_metadata("/tmp/does_not_exist_12345.csv")
+        result = downloader.load_existing_metadata("/tmp/does_not_exist_12345.csv")
         self.assertEqual(result, {})
 
     def test_save_sorts_by_doc_id(self):
@@ -283,7 +283,7 @@ class TestMetadataPersistence(unittest.TestCase):
                 },
             }
 
-            download_data.save_metadata(metadata, tmp_path)
+            downloader.save_metadata(metadata, tmp_path)
 
             # Read raw to check order
             with open(tmp_path, "r") as f:
