@@ -153,3 +153,41 @@ rag_stress_testing/
 - [ ] Measure generation quality (faithfulness, relevance)
 - [ ] Tune chunk size, overlap, and top-k parameters
 - [ ] Add logging and error handling
+
+## Tech Stack
+
+### Orchestration Framework
+
+| Tool | Pros | Cons |
+|------|------|------|
+| **LangChain** | Massive ecosystem, standard interface, rich document loaders/splitters | Bloated/over-abstracted, hard to debug, frequent breaking changes |
+| **Haystack** | Explicit pipeline design (DAGs), Pythonic/readable, production-ready | Smaller ecosystem than LangChain |
+| **Pure Python** | Maximum control, zero dependency bloat, easy debugging | Reinventing wheels, higher maintenance code |
+
+**Decision**: **LangChain** — its `Community` document loaders and text splitters save days of work.
+
+### Vector Database
+
+| Tool | Pros | Cons |
+|------|------|------|
+| **ChromaDB** | Open-source, in-process (no Docker), Python-native, simple storage/indexing | Newer project, SQLite/ClickHouse wrapper, scaling limits |
+| **FAISS** | Gold standard for raw speed/efficiency | Index only — you manage text/metadata storage separately |
+| **Qdrant** | Extremely fast (Rust), great filtering, production-grade | Requires separate service (Docker), more setup |
+
+**Decision**: **ChromaDB** — simplest setup (`pip install chromadb`), no Docker needed.
+
+### Embeddings Model
+
+| Tool | Pros | Cons |
+|------|------|------|
+| **HuggingFace** (`all-MiniLM-L6-v2`) | Free, runs locally, data stays private, decent performance | Uses local CPU/GPU, need to manage model files |
+| **OpenAI** (`text-embedding-3-small`) | Top-tier performance, simple API, no local compute | Paid, data privacy concerns, API latency |
+
+**Decision**: **HuggingFace** — start local/free, upgrade later if needed.
+
+### Chunking Strategy
+
+- **Config driven**: Hyperparameters should be easily adjustable in a config file or as function arguments
+- **Splitter**: Recursive Character Text Splitter
+- **Chunk Size**: ~1000 characters (good for paragraphs)
+- **Overlap**: ~100 characters (so context isn't lost at the edges)
