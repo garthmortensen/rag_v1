@@ -45,3 +45,23 @@ This doc contains ADRs for the **RAG Stress Testing** project.
 **Decision:** Use **Commitizen** and **GitHub Actions**.
 
 **Rationale:** Enforces semantic versioning via conventional commits; automating checks (`uv run ruff`, `uv run pytest`) prevents bad code from merging.
+
+---
+
+## 1.5 Document Loading: `langchain-community`
+
+**Context:** We need to read HTML, CSV, PDF, and other file formats into a standard document representation for downstream processing.
+
+**Decision:** Use **LangChain Community** document loaders.
+
+**Rationale:** Provides pre-built loaders for 10+ file types (BSHTMLLoader, CSVLoader, PyPDFLoader, etc.) with a consistent interface — each returns a list of `Document` objects with `.page_content` and `.metadata`. Avoids writing and maintaining custom parsers for each format.
+
+---
+
+## 1.6 Vector Database: `ChromaDB`
+
+**Context:** We need a vector database to store embeddings and enable semantic search.
+
+**Decision:** Use **ChromaDB** in embedded (in-process) mode.
+
+**Rationale:** Simplest setup (`pip install chromadb`), runs in the same Python process with no Docker or server required. Stores data to disk at `corpus/vector_db/`. Sufficient for a single-user learning/development project.
