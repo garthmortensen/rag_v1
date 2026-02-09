@@ -25,8 +25,8 @@ graph TD
         PDF[".pdf files"]
     end
 
-    subgraph Extract["Extract (LangChain Loaders)"]
-        BS4["BSHTMLLoader"]
+    subgraph Extract["Extract LangChain Loaders"]
+        BS4["HTMLLoader"]
         PD["CSVLoader"]
         PY["PyPDFLoader"]
     end
@@ -80,7 +80,7 @@ rag_stress_testing/
 │   │   └── model.py       # Wrapper for embedding model
 │   └── utils/
 ├── tests/
-├── pyproject.toml
+├── pyproject.toml 
 └── README.md
 ```
 
