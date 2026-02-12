@@ -1,12 +1,14 @@
 """Main ingestion pipeline.
 
-Loads raw corpus files, logs a summary, and prepares documents
-for downstream embedding and storage.
+Loads raw corpus files, splits them into chunks using
+RecursiveCharacterTextSplitter, logs a summary, and prepares
+documents for downstream embedding and storage.
 """
 
 import logging
 import sys
 
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from src.ingestion.loaders import load_directory, LOADER_MAP
 
 logging.basicConfig(
@@ -15,11 +17,49 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Chunking defaults
+DEFAULT_CHUNK_SIZE_IN_CHARS = 1000  # 1,000 chars equates to 200-300 words
+DEFAULT_CHUNK_OVERLAP_IN_CHARS = 100
 
-def run() -> list:
-    """Run the ingestion pipeline: load all supported files from raw_data/."""
+
+def chunk_documents(
+    docs: list,
+    chunk_size: int = DEFAULT_CHUNK_SIZE_IN_CHARS,
+    chunk_overlap: int = DEFAULT_CHUNK_OVERLAP_IN_CHARS,
+) -> list:
+    """Split documents into smaller chunks for embedding.
+
+    Uses LangChain's RecursiveCharacterTextSplitter, which tries to
+    split on paragraph → sentence → word boundaries in order to keep
+    semantically related text together.
+
+    Each resulting chunk inherits the metadata of its parent document.
+    """
+
+    # the magic
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=len,  # count characters (default)
+    )
+    chunks = splitter.split_documents(docs)
+    logger.info(f"Split {len(docs)} document(s) into {len(chunks)} chunk(s)  (size={chunk_size}, overlap={chunk_overlap})")
+    return chunks
+
+
+def run(
+    chunk_size: int = DEFAULT_CHUNK_SIZE_IN_CHARS,
+    chunk_overlap: int = DEFAULT_CHUNK_OVERLAP_IN_CHARS,
+) -> list:
+    """Run the ingestion pipeline.
+
+    1. Load all supported files from corpus/raw_data/.
+    2. Split loaded documents into chunks.
+    3. Return the list of chunks ready for embedding.
+    """
     logger.info("Starting ingestion pipeline")
 
+    # Step 1: Load
     docs = load_directory()
 
     if not docs:
@@ -28,23 +68,26 @@ def run() -> list:
 
     # Log a breakdown by source file
     # counts numbers of docs per source file, e.g.:
-    # {}"corpus/raw_data/credit_risk_models.pdf": 641,     # 641 pages
-    # "corpus/raw_data/market_risk_models.pdf": 296,       # 296 pages
-    # "corpus/raw_data/baseline_domestic_final.csv": 13,   # 13 rows
-    # "corpus/raw_data/transparency_qas.html": 1,}         # 1 whole page
+    # {"corpus/raw_data/credit_risk_models.pdf": 641,     # 641 pages
+    #  "corpus/raw_data/market_risk_models.pdf": 296,      # 296 pages
+    #  "corpus/raw_data/baseline_domestic_final.csv": 13,  # 13 rows
+    #  "corpus/raw_data/transparency_qas.html": 1}         # 1 whole page
     sources = {}
     for doc in docs:
         src = doc.metadata.get("source", "unknown")
-        sources[src] = sources.get(src, 0) + 1  # =1 for every new doc in the file
+        sources[src] = sources.get(src, 0) + 1  # +1 for every new doc in the file
 
-    logger.info("Loaded %d document(s) from %d file(s):", len(docs), len(sources))
+    logger.info(f"Loaded {len(docs)} document(s) from {len(sources)} file(s):")
     for source, count in sorted(sources.items()):
-        logger.info("  %s  →  %d chunk(s)", source, count)
+        logger.info(f"  {source}  →  {count} doc(s)")
 
     supported = ", ".join(LOADER_MAP.keys())
-    logger.info("Supported file types: %s", supported)
+    logger.info(f"Supported file types: {supported}")
 
-    return docs
+    # Step 2: Chunk
+    chunks = chunk_documents(docs, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+
+    return chunks
 
 
 if __name__ == "__main__":
