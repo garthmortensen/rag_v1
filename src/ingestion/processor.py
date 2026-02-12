@@ -1,14 +1,16 @@
 """Main ingestion pipeline.
 
 Loads raw corpus files, splits them into chunks using
-RecursiveCharacterTextSplitter, logs a summary, and prepares
-documents for downstream embedding and storage.
+RecursiveCharacterTextSplitter, embeds chunks via
+HuggingFace all-MiniLM-L6-v2, and upserts them into a
+persistent ChromaDB collection at corpus/vector_db/.
 """
 
 import logging
 import sys
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from src.embedding.model import embed_and_store
 from src.ingestion.loaders import load_directory, LOADER_MAP
 
 logging.basicConfig(
@@ -55,7 +57,8 @@ def run(
 
     1. Load all supported files from corpus/raw_data/.
     2. Split loaded documents into chunks.
-    3. Return the list of chunks ready for embedding.
+    3. Embed chunks and upsert into ChromaDB.
+    4. Return the list of chunks.
     """
     logger.info("Starting ingestion pipeline")
 
@@ -86,6 +89,9 @@ def run(
 
     # Step 2: Chunk
     chunks = chunk_documents(docs, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+
+    # Step 3: Embed and store
+    embed_and_store(chunks)
 
     return chunks
 
