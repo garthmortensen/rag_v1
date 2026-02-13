@@ -1,3 +1,9 @@
+## 0.8.0 (2026-02-13)
+
+### Feat
+
+- **answer**: add llm answer step
+
 ## 0.7.0 (2026-02-12)
 
 ### Feat

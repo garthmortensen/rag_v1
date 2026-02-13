@@ -2549,7 +2549,7 @@ wheels = [
 
 [[package]]
 name = "rag-stress-testing"
-version = "0.7.0"
+version = "0.8.0"
 source = { virtual = "." }
 dependencies = [
     { name = "base32-crockford" },
