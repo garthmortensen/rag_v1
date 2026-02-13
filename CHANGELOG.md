@@ -1,3 +1,9 @@
+## 0.7.0 (2026-02-12)
+
+### Feat
+
+- **retrieval**: implement retrieval and tests
+
 ## 0.6.0 (2026-02-12)
 
 ### Feat
