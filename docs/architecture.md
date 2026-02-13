@@ -14,11 +14,14 @@ rag_stress_testing_v1/
 │   │   ├── downloader.py      # Phase 1: download files from data_sources.csv
 │   │   ├── loaders.py         # Extract: LangChain Community document loaders
 │   │   └── processor.py       # Pipeline orchestrator (load → chunk → embed → store)
-│   └── embedding/
-│       └── model.py           # Transform + Load: embed via HuggingFace, upsert to ChromaDB
+│   ├── embedding/
+│   │   └── model.py           # Transform + Load: embed via HuggingFace, upsert to ChromaDB
+│   └── retrieval/
+│       └── query.py           # Semantic search: embed query → ANN lookup → ranked results
 ├── tests/
 │   ├── test_downloader.py
-│   └── test_embedding.py
+│   ├── test_embedding.py
+│   └── test_retrieval.py
 ├── docs/
 │   ├── ADR.md
 │   ├── architecture.md
@@ -59,11 +62,21 @@ graph LR
         LOAD --> CHUNK --> EMBED --> CHROMA
     end
 
+    subgraph Phase3["Phase 3 — Retrieve"]
+        QUERY["query.py<br/>retrieve() / retrieve_formatted()"]
+        SEMBED["HuggingFaceEmbeddings<br/>embed_query()"]
+        ANN["ChromaDB ANN search<br/>top-k nearest neighbours"]
+
+        QUERY --> SEMBED --> ANN
+    end
+
     RAW --> LOAD
     META --> EMBED
+    CHROMA --> ANN
 
     style Phase1 fill:#1a1a2e,stroke:#555,color:#fff
     style Phase2 fill:#16213e,stroke:#555,color:#fff
+    style Phase3 fill:#1e3a2e,stroke:#555,color:#fff
     style Extract fill:#1a3a5c,stroke:#4a9eed,color:#fff
     style Transform fill:#1a4a3a,stroke:#4aed9e,color:#fff
     style Load fill:#4a1a3a,stroke:#ed4a9e,color:#fff
@@ -147,6 +160,7 @@ graph BT
     LOAD["loaders.py<br/><i>10 LangChain loaders</i>"]
     MODEL["model.py<br/><i>embed + store</i>"]
     DL["downloader.py<br/><i>HTTP fetcher</i>"]
+    QUERY["query.py<br/><i>semantic search</i>"]
 
     LC_SPLIT["langchain-text-splitters"]
     LC_COMM["langchain-community"]
@@ -159,6 +173,7 @@ graph BT
     PROC --> LC_SPLIT
     MODEL --> LC_HF
     MODEL --> CHROMA
+    QUERY --> MODEL
     DL --> META_CSV["corpus/metadata.csv"]
     MODEL --> META_CSV
 
@@ -166,6 +181,7 @@ graph BT
     style LOAD fill:#1a3a5c,stroke:#4a9eed,color:#fff
     style MODEL fill:#3a3a1a,stroke:#edd74a,color:#fff
     style DL fill:#2d2d2d,stroke:#888,color:#fff
+    style QUERY fill:#1e3a2e,stroke:#4aed9e,color:#fff
 ```
 
 ## 
