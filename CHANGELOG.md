@@ -1,3 +1,9 @@
+## 0.6.0 (2026-02-12)
+
+### Feat
+
+- **embeddings**: implement embeddings and model selection based on VRAM
+
 ## 0.5.0 (2026-02-11)
 
 ### Feat
