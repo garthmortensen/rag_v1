@@ -87,6 +87,34 @@ To load and process the downloaded corpus:
 | `.docx` | UnstructuredWordDocumentLoader | 1 per file |
 | `.pptx` | UnstructuredPowerPointLoader | 1 per file |
 
+## Retrieval
+
+Query the vector store for relevant document chunks. This is just retrieval — it shows which chunks matched, not a synthesized answer:
+
+```bash
+# Basic semantic search (top-5 results)
+uv run python -m src.retrieval.query "What is the peak unemployment rate?"
+
+# More results with a metadata filter
+uv run python -m src.retrieval.query "CET1 capital ratio" --top-k 10 --filter source_type=pdf
+```
+
+## Answer Generation (RAG)
+
+Add the `--answer` flag for a ChatGPT-like experience — retrieves the top-k chunks, builds a grounded prompt, and sends it to a local Ollama LLM. Answers include source citations:
+
+1. **Install Ollama** (one-time):
+   ```bash
+   curl -fsSL https://ollama.com/install.sh | sh
+   ollama pull llama3.2:3b
+   ```
+
+2. **Ask a question**:
+   ```bash
+   uv run python -m src.retrieval.query "What is CCAR?" --answer
+   uv run python -m src.retrieval.query "capital ratios" --answer --model phi3
+   ```
+
 ## Project Structure
 
 ```text
@@ -94,20 +122,30 @@ rag_stress_testing/
 ├── corpus/
 │   ├── data_sources.csv       # URLs and metadata for downloading
 │   ├── metadata.csv           # Auto-generated download metadata
-│   └── raw_data/              # Downloaded files (HTML, CSV, PDF, etc.)
+│   ├── raw_data/              # Downloaded files (HTML, CSV, PDF, etc.)
+│   └── vector_db/             # ChromaDB persistent storage (HNSW index)
 ├── src/
-│   └── ingestion/
-│       ├── __init__.py
-│       ├── downloader.py      # Downloads files from data_sources.csv
-│       ├── loaders.py         # File readers (HTML/CSV/PDF/etc.)
-│       └── processor.py       # Main ingestion pipeline
+│   ├── utils.py               # RAM-aware embedding model selection
+│   ├── ingestion/
+│   │   ├── downloader.py      # Downloads files from data_sources.csv
+│   │   ├── loaders.py         # File readers (HTML/CSV/PDF/etc.)
+│   │   └── processor.py       # Main ingestion pipeline
+│   ├── embedding/
+│   │   └── model.py           # Embed via HuggingFace, upsert to ChromaDB
+│   ├── retrieval/
+│   │   └── query.py           # Semantic search: embed query → ANN lookup
+│   └── generation/
+│       └── llm.py             # RAG generation: prompt → Ollama LLM → answer
 ├── tests/
-│   └── test_downloader.py
+│   ├── test_downloader.py
+│   ├── test_embedding.py
+│   ├── test_retrieval.py
+│   ├── test_generation.py
+│   └── test_utils.py
 ├── docs/
 │   ├── ADR.md                 # Architecture Decision Records
-│   └── garth/
-│       ├── TODO.md            # Project roadmap
-│       └── phase_2.md         # Phase 2 design doc
+│   ├── architecture.md        # Pipeline & dependency diagrams
+│   └── phase_2.md             # Phase 2 design doc
 ├── pyproject.toml
 ├── CHANGELOG.md
 └── README.md
@@ -137,15 +175,15 @@ rag_stress_testing/
 ### Phase 3: vector store
 - [x] Choose and set up vector database (ChromaDB recommended)
 - [x] Generate embeddings (HuggingFace `all-MiniLM-L6-v2`)
-- [ ] Build ingestion script to upsert chunks into vector DB
-- [ ] Deduplicate entries (idempotent upserts)
+- [x] Build ingestion script to upsert chunks into vector DB
+- [x] Deduplicate entries (idempotent upserts)
 - [x] Verify retrieval with test queries
 
 ### Phase 4: retrieval & generation
-- [ ] Implement semantic search over vector store
-- [ ] Integrate LLM for answer generation (RAG chain)
-- [ ] Build a simple query interface (CLI or notebook)
-- [ ] Add source citation to generated answers
+- [x] Implement semantic search over vector store (`src/retrieval/query.py`)
+- [x] Integrate LLM for answer generation — Ollama via `langchain-ollama` (`src/generation/llm.py`)
+- [x] Build a simple query interface (CLI with `--answer` flag)
+- [x] Add source citation to generated answers
 
 ### Phase 5: evaluation & hardening
 - [ ] Build evaluation dataset (question/answer pairs)

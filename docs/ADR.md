@@ -65,3 +65,13 @@ This doc contains ADRs for the **RAG Stress Testing** project.
 **Decision:** Use **ChromaDB** in embedded (in-process) mode.
 
 **Rationale:** Simplest setup (`pip install chromadb`), runs in the same Python process with no Docker or server required. Stores data to disk at `corpus/vector_db/`. Sufficient for a single-user learning/development project.
+
+---
+
+## 1.7 LLM Backend: `Ollama`
+
+**Context:** The retrieval module returns relevant document chunks, but users want natural-language answers grounded in those chunks (RAG generation).
+
+**Decision:** Use **Ollama** as the local LLM runtime, integrated via **langchain-ollama**.
+
+**Rationale:** Runs fully offline — no API keys, no cloud costs, no data leakage. Supports many open-weight models (Llama 3.2, Phi-3, Mistral, etc.) with a single `ollama pull` command. The `langchain-ollama` package provides a `ChatOllama` class that plugs directly into the existing LangChain ecosystem. Default model is `llama3.2:3b` — small enough for laptops yet capable enough for grounded Q&A.

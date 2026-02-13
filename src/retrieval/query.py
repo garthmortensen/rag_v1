@@ -5,10 +5,15 @@ at ingestion time, then performs approximate nearest-neighbor (ANN)
 search against the ChromaDB collection to return the most relevant
 document chunks.
 
+Optionally generates a grounded answer via a local Ollama LLM when
+the ``--answer`` flag is provided.
+
 Usage (CLI):
     python -m src.retrieval.query "What is the peak unemployment rate?"
     python -m src.retrieval.query "CET1 capital ratio" --top-k 10
     python -m src.retrieval.query "credit risk" --filter source_type=pdf
+    python -m src.retrieval.query "What is CCAR?" --answer
+    python -m src.retrieval.query "capital ratios" --answer --model phi3
 """
 
 import argparse
@@ -202,7 +207,7 @@ def _print_results(results: list[dict]) -> None:
     for r in results:
         title = r["metadata"].get("title", "—")
         source = r["metadata"].get("source", "—")
-        preview = textwrap.shorten(r["text"], width=120, placeholder=" …")
+        preview = textwrap.shorten(r["text"], width=1000, placeholder=" …")
 
         print(f"\n{'─' * 72}")
         print(f"  Rank {r['rank']}  │  distance: {r['distance']:.4f}")
@@ -213,6 +218,51 @@ def _print_results(results: list[dict]) -> None:
 
     print(f"\n{'─' * 72}")
     print(f"  {len(results)} result(s) returned.\n")
+
+
+def _generate_and_print_answer(
+    query: str,
+    chunks: list[dict],
+    model: str | None = None,
+) -> None:
+    """Call the generation module and pretty-print the LLM answer.
+
+    Handles import errors (langchain-ollama not installed) and
+    connection errors (Ollama server not running) gracefully.
+    """
+    try:
+        from src.generation.llm import generate_answer, DEFAULT_MODEL
+    except ImportError:
+        console.print(
+            "\n[bold red]Error:[/bold red] langchain-ollama is not installed.\n"
+            "  Run: [bold]uv add langchain-ollama[/bold]\n"
+        )
+        return
+
+    model_name = model or DEFAULT_MODEL
+    console.print(
+        f"\n[bold cyan]Generating answer with {model_name}…[/bold cyan]\n"
+    )
+
+    try:
+        answer = generate_answer(query, chunks, model=model_name)
+    except ConnectionError as exc:
+        console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
+        return
+    except Exception as exc:
+        console.print(
+            f"\n[bold red]Generation failed:[/bold red] {exc}\n"
+        )
+        return
+
+    console.print(
+        Panel(
+            answer,
+            title="[bold green]Answer[/bold green]",
+            border_style="green",
+            padding=(1, 2),
+        )
+    )
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -234,6 +284,18 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Metadata filter as key=value (e.g. source_type=pdf)",
     )
+    parser.add_argument(
+        "--answer",
+        action="store_true",
+        default=False,
+        help="Generate an LLM answer from retrieved chunks (requires Ollama)",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Ollama model to use for generation (default: llama3.2:3b)",
+    )
 
     args = parser.parse_args(argv)
 
@@ -242,6 +304,9 @@ def main(argv: list[str] | None = None) -> None:
     where = _parse_filter(args.filter) if args.filter else None
     results = retrieve_formatted(args.query, n_results=args.top_k, where=where)
     _print_results(results)
+
+    if args.answer:
+        _generate_and_print_answer(args.query, results, model=args.model)
 
 
 if __name__ == "__main__":

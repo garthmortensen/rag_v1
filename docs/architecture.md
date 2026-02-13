@@ -16,12 +16,16 @@ rag_stress_testing_v1/
 │   │   └── processor.py       # Pipeline orchestrator (load → chunk → embed → store)
 │   ├── embedding/
 │   │   └── model.py           # Transform + Load: embed via HuggingFace, upsert to ChromaDB
-│   └── retrieval/
-│       └── query.py           # Semantic search: embed query → ANN lookup → ranked results
+│   ├── retrieval/
+│   │   └── query.py           # Semantic search: embed query → ANN lookup → ranked results
+│   └── generation/
+│       └── llm.py             # RAG generation: build prompt → Ollama LLM → grounded answer
 ├── tests/
 │   ├── test_downloader.py
 │   ├── test_embedding.py
-│   └── test_retrieval.py
+│   ├── test_retrieval.py
+│   ├── test_generation.py
+│   └── test_utils.py
 ├── docs/
 │   ├── ADR.md
 │   ├── architecture.md
@@ -70,13 +74,23 @@ graph LR
         QUERY --> SEMBED --> ANN
     end
 
+    subgraph Phase4["Phase 4 — Generate"]
+        PROMPT["llm.py<br/>build_prompt()"]
+        LLM["ChatOllama<br/>llama3.2:3b"]
+        ANSWER["Grounded answer<br/>with source citations"]
+
+        PROMPT --> LLM --> ANSWER
+    end
+
     RAW --> LOAD
     META --> EMBED
     CHROMA --> ANN
+    ANN --> PROMPT
 
     style Phase1 fill:#1a1a2e,stroke:#555,color:#fff
     style Phase2 fill:#16213e,stroke:#555,color:#fff
     style Phase3 fill:#1e3a2e,stroke:#555,color:#fff
+    style Phase4 fill:#2e1a3a,stroke:#555,color:#fff
     style Extract fill:#1a3a5c,stroke:#4a9eed,color:#fff
     style Transform fill:#1a4a3a,stroke:#4aed9e,color:#fff
     style Load fill:#4a1a3a,stroke:#ed4a9e,color:#fff
@@ -161,10 +175,12 @@ graph BT
     MODEL["model.py<br/><i>embed + store</i>"]
     DL["downloader.py<br/><i>HTTP fetcher</i>"]
     QUERY["query.py<br/><i>semantic search</i>"]
+    GEN["llm.py<br/><i>RAG generation</i>"]
 
     LC_SPLIT["langchain-text-splitters"]
     LC_COMM["langchain-community"]
     LC_HF["langchain-huggingface"]
+    LC_OL["langchain-ollama"]
     CHROMA["chromadb"]
 
     PROC --> LOAD
@@ -174,6 +190,8 @@ graph BT
     MODEL --> LC_HF
     MODEL --> CHROMA
     QUERY --> MODEL
+    GEN --> QUERY
+    GEN --> LC_OL
     DL --> META_CSV["corpus/metadata.csv"]
     MODEL --> META_CSV
 
@@ -182,6 +200,7 @@ graph BT
     style MODEL fill:#3a3a1a,stroke:#edd74a,color:#fff
     style DL fill:#2d2d2d,stroke:#888,color:#fff
     style QUERY fill:#1e3a2e,stroke:#4aed9e,color:#fff
+    style GEN fill:#2e1a3a,stroke:#ed4aed,color:#fff
 ```
 
 ## 
