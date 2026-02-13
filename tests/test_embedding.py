@@ -99,8 +99,10 @@ class TestGetEmbeddingFunction(unittest.TestCase):
         mock_hfe.assert_called_once_with(model_name="test-model")
 
     @patch("src.embedding.model.HuggingFaceEmbeddings")
-    def test_default_model_name(self, mock_hfe):
+    @patch("src.embedding.model.select_best_model", return_value={"name": "all-MiniLM-L6-v2"})
+    def test_default_model_auto_selects(self, mock_select, mock_hfe):
         model.get_embedding_function()
+        mock_select.assert_called_once()
         mock_hfe.assert_called_once_with(model_name="all-MiniLM-L6-v2")
 
 

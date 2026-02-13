@@ -17,6 +17,8 @@ import os
 import chromadb
 from langchain_huggingface import HuggingFaceEmbeddings
 
+from src.utils import select_best_model
+
 logger = logging.getLogger(__name__)
 
 # ── Defaults ────────────────────────────────────────────────────────
@@ -29,12 +31,20 @@ DEFAULT_BATCH_SIZE = 500
 
 # ── Helpers ─────────────────────────────────────────────────────────
 
-def get_embedding_function(model_name: str = MODEL_NAME) -> HuggingFaceEmbeddings:
-    """Return a HuggingFaceEmbeddings instance for the given model.
+def get_embedding_function(model_name: str | None = None) -> HuggingFaceEmbeddings:
+    """Return a HuggingFaceEmbeddings instance.
+
+    If *model_name* is None, the best model that fits in available
+    RAM (with 30% overhead) is selected automatically via
+    ``select_best_model()``.
 
     The model is downloaded on first use and cached in
-    ~/.cache/huggingface/.  all-MiniLM-L6-v2 produces 384-dim vectors.
+    ~/.cache/huggingface/.
     """
+    if model_name is None:
+        selected = select_best_model()
+        model_name = selected["name"]
+        logger.info(f"Auto-selected embedding model: {model_name}")
     return HuggingFaceEmbeddings(model_name=model_name)
 
 
