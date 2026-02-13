@@ -128,18 +128,18 @@ rag_stress_testing/
 - [x] Move download_data.py to src/ingestion/downloader.py
 - [x] Implement document loaders (HTML, CSV, PDF, Excel, text, Markdown, JSON, Word, PowerPoint)
 - [x] Implement ingestion pipeline (processor.py)
-- [ ] Implement text chunking strategy for long docs
-- [ ] Implement metadata extraction (year, document type, source)
-- [ ] Set up ChromaDB vector store
-- [ ] Generate embeddings (HuggingFace `all-MiniLM-L6-v2`)
-- [ ] Build ingestion script to upsert chunks into vector DB
+- [x] Implement text chunking strategy for long docs
+- [x] Implement metadata extraction (year, document type, source)
+- [x] Set up ChromaDB vector store
+- [x] Generate embeddings (HuggingFace `all-MiniLM-L6-v2`)
+- [x] Build ingestion script to upsert chunks into vector DB
 
 ### Phase 3: vector store
-- [ ] Choose and set up vector database (ChromaDB recommended)
-- [ ] Generate embeddings (HuggingFace `all-MiniLM-L6-v2`)
+- [x] Choose and set up vector database (ChromaDB recommended)
+- [x] Generate embeddings (HuggingFace `all-MiniLM-L6-v2`)
 - [ ] Build ingestion script to upsert chunks into vector DB
 - [ ] Deduplicate entries (idempotent upserts)
-- [ ] Verify retrieval with test queries
+- [x] Verify retrieval with test queries
 
 ### Phase 4: retrieval & generation
 - [ ] Implement semantic search over vector store
@@ -191,3 +191,30 @@ rag_stress_testing/
 - **Splitter**: Recursive Character Text Splitter
 - **Chunk Size**: ~1000 characters (good for paragraphs)
 - **Overlap**: ~100 characters (so context isn't lost at the edges)
+
+## Visuals of Chromadb
+
+```text
+    ┌─────────────────────────────────┐
+    │       •credit_risk              │
+    │      • •Basel_III               │
+    │     •                           │
+    │                    ◆ QUERY      │
+    │              •stress_test       │
+    │             • •CCAR             │
+    │            •                    │
+    │  •market_risk                   │
+    │ • •VaR                          │
+    └─────────────────────────────────┘
+    Cosine similarity → spatial proximity
+```
+
+```text
+         ╭─── 0.95 ───╮
+       ╭─│── 0.87 ──│─╮
+     ╭─│─│── 0.74 ─│─│─╮
+     │ │ │  ◆ QUERY │ │ │
+     ╰─│─│─────────│─│─╯
+       ╰─│─────────│─╯
+         ╰─────────╯
+```
