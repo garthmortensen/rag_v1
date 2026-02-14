@@ -205,6 +205,7 @@ def embed_and_store(
             meta["doc_id"] = csv_entry["doc_id"]
             meta["title"] = csv_entry.get("title", "")
             meta["category"] = csv_entry.get("category", "")
+            meta["source_org"] = csv_entry.get("source_org", "")
             meta["author"] = csv_entry.get("author", "")
             meta["source_url"] = csv_entry.get("source_url", "")
             meta["source_type"] = csv_entry.get("source_type", "")

@@ -94,13 +94,45 @@ To download the stress testing corpus:
 
 ## Ingestion Pipeline
 
-To load and process the downloaded corpus:
+The ingestion pipeline loads downloaded files, chunks them, embeds the chunks, and upserts everything into ChromaDB.
 
-1. **Run the ingestion pipeline**:
+### Running ingestion
+
+1. **Make sure files are downloaded** (see [Data Acquisition](#data-acquisition) above).
+2. **Review `config.txt`** — set your desired `chunk_size`, `chunk_overlap`, and `collection_name`.
+3. **Run the pipeline**:
    ```bash
    uv run python -m src.ingestion.processor
    ```
-   This reads all supported files from `corpus/raw_data/` and converts them into LangChain `Document` objects.
+
+The pipeline will:
+- Load all supported files from `corpus/raw_data/`
+- Split them into chunks based on `chunk_size` / `chunk_overlap`
+- Embed each chunk using HuggingFace sentence-transformers
+- Enrich metadata from `corpus/metadata.csv` (doc_id, title, author, category, …)
+- Upsert embeddings into the ChromaDB collection named in `config.txt`
+
+### Re-ingesting with different settings
+
+To create a second set of embeddings (e.g. larger chunks), just edit `config.txt` and run the pipeline again:
+
+```bash
+# Edit config.txt:
+#   chunk_size      = 8000
+#   collection_name = stress_test_docs_8k
+
+uv run python -m src.ingestion.processor
+```
+
+Each `collection_name` produces a separate collection — existing ones are not deleted.
+
+### Inspecting collections
+
+To see which collections exist and how many chunks each contains:
+
+```bash
+python corpus/inspect_db.py
+```
 
 ### Supported File Types
 
@@ -144,10 +176,31 @@ Add the `--answer` flag for a ChatGPT-like experience — retrieves the top-k ch
    uv run python -m src.retrieval.query "capital ratios" --answer --model phi3
    ```
 
+## Web UI (Streamlit)
+
+A multi-pane browser interface for interactive querying:
+
+```bash
+uv run streamlit run app.py
+```
+
+**Sidebar panes:**
+- **config.txt** — shows active pipeline configuration
+- **Collection picker** — switch between embedding collections (1k, 8k, etc.) with live chunk counts
+- **Top-K slider** — control how many chunks are retrieved
+- **Metadata filter** — optional filter (e.g. `source_type=pdf`)
+- **Model & Temperature** — choose Ollama model and sampling temperature
+
+**Main pane:**
+- Chat-style interface with message history
+- LLM-generated answers with source citations
+- Expandable retrieved sources showing rank, category, distance, and chunk text
+
 ## Project Structure
 
 ```text
 rag_stress_testing/
+├── app.py                     # Streamlit web UI
 ├── config.txt                 # Pipeline settings (chunk size, collection name)
 ├── corpus/
 │   ├── data_sources.csv       # URLs and metadata for downloading
@@ -164,7 +217,8 @@ rag_stress_testing/
 │   ├── embedding/
 │   │   └── model.py           # Embed via HuggingFace, upsert to ChromaDB
 │   ├── retrieval/
-│   │   └── query.py           # Semantic search: embed query → ANN lookup
+│   │   │   ├── query.py           # Semantic search: embed query → ANN lookup
+│   │   └── query_logger.py    # Log query sessions to logs/
 │   └── generation/
 │       └── llm.py             # RAG generation: prompt → Ollama LLM → answer
 ├── tests/

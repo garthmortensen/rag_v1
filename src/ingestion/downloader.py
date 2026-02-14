@@ -34,6 +34,7 @@ METADATA_FIELDS = [
     "local_path",
     "title",
     "category",
+    "source_org",
     "author",
     "retrieved_at",
     "last_modified_at",
@@ -138,7 +139,7 @@ def save_metadata(metadata, path):
         writer.writerows(rows)
 
 
-def capture_metadata(response, filepath, filetype, url, name, category=""):
+def capture_metadata(response, filepath, filetype, url, name, category="", source_org=""):
     """Build a metadata dict from a successful download response."""
     last_modified_raw = response.headers.get("Last-Modified", "")
     if last_modified_raw:
@@ -154,6 +155,7 @@ def capture_metadata(response, filepath, filetype, url, name, category=""):
         "local_path": filepath,
         "title": name,
         "category": category,
+        "source_org": source_org,
         "author": extract_author(url),
         "retrieved_at": datetime.now(timezone.utc).strftime("%Y%m%d%H%M"),
         "last_modified_at": last_modified,
@@ -246,6 +248,7 @@ def download_files():
         # step through each row in csv and download the file if it doesn't exist, then update progress bar
         for row in rows:
             category = row.get("Category", "Uncategorized").strip()
+            source_org = row.get("Source", "").strip()
             name = row.get("Name", "Unknown").strip()
             filetype = row.get("Filetype", "html").strip().lower()
             url = row.get("Link", "").strip()
@@ -274,7 +277,7 @@ def download_files():
                     result_status = "[green]Downloaded[/green]"
 
                     metadata[filepath] = capture_metadata(
-                        response, filepath, filetype, url, name, category
+                        response, filepath, filetype, url, name, category, source_org
                     )
 
                     # Only sleep if we actually downloaded something

@@ -188,6 +188,98 @@ sequenceDiagram
 
 ---
 
+## Retrieval & Generation Sequence Diagram
+
+A focused view of what happens when a user submits a query with `--answer`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User
+    participant CLI as query.py<br/>main()
+    participant CFG as config.txt<br/>CFG singleton
+    participant RET as query.py<br/>retrieve_formatted()
+    participant HF as HuggingFaceEmbeddings<br/>embed_query()
+    participant CHROMA as 🛢 ChromaDB<br/>collection.query()
+    participant GEN as query.py<br/>_generate_and_print_answer()
+    participant LLM as llm.py<br/>generate_answer()
+    participant PROMPT as llm.py<br/>build_prompt()
+    participant OLLAMA as ChatOllama<br/>llama3.2:3b
+    participant LOG as query_logger.py<br/>log_query_session()
+
+    Note over User,CLI: User runs: python -m src.retrieval.query "question" --answer
+
+    %% ── Startup ──
+    rect rgb(220, 215, 245)
+        Note over CLI,CFG: Startup
+        CLI ->> CLI: print_ascii_banner()
+        CLI ->> CFG: read collection_name,<br/>beep_on_answer, …
+        CFG -->> CLI: CFG dict
+        CLI ->> CLI: print_config()
+    end
+
+    %% ── Parse filter ──
+    opt --filter key=value provided
+        CLI ->> CLI: _parse_filter("source_type=pdf")<br/>→ {"source_type": "pdf"}
+    end
+
+    %% ── Retrieval ──
+    rect rgb(195, 230, 210)
+        Note over RET,CHROMA: Retrieval — semantic search
+        CLI ->> RET: retrieve_formatted(query, n_results=k, where=filter)
+        RET ->> HF: embed_query(query)
+        HF ->> HF: tokenize → encode → pool
+        HF -->> RET: 384-dim query vector
+        RET ->> CHROMA: collection.query(<br/>  query_embeddings=[vec],<br/>  n_results=k,<br/>  where=filter<br/>)
+        CHROMA ->> CHROMA: HNSW ANN search<br/>cosine distance
+        CHROMA -->> RET: {ids, documents,<br/>metadatas, distances}
+        RET ->> RET: flatten → list[dict]<br/>(rank, id, distance, text, metadata)
+        RET -->> CLI: top-k chunks
+    end
+
+    CLI ->> CLI: _print_results(chunks)<br/>display ranked chunks to terminal
+
+    %% ── Generation ──
+    rect rgb(220, 200, 235)
+        Note over GEN,OLLAMA: Generation — LLM grounded answer
+        CLI ->> GEN: _generate_and_print_answer(query, chunks, model)
+        GEN ->> LLM: generate_answer(query, chunks)
+        LLM ->> PROMPT: build_prompt(query, chunks)
+
+        loop Each retrieved chunk
+            PROMPT ->> PROMPT: format: [Source: title | path]<br/>chunk_text
+        end
+        PROMPT ->> PROMPT: assemble CONTEXT + QUESTION + ANSWER template
+        PROMPT -->> LLM: prompt string
+
+        LLM ->> OLLAMA: invoke([<br/>  ("system", SYSTEM_PROMPT),<br/>  ("human", prompt)<br/>])
+
+        Note over OLLAMA: Local inference<br/>(temp=0.1)
+        OLLAMA ->> OLLAMA: decode tokens
+        OLLAMA -->> LLM: response.content
+        LLM -->> GEN: answer string
+        GEN ->> GEN: print answer in Rich Panel
+
+        opt beep_on_answer = true
+            GEN ->> User: 🔔 terminal bell (\a)
+        end
+
+        GEN -->> CLI: answer string
+    end
+
+    %% ── Logging ──
+    rect rgb(230, 225, 200)
+        Note over LOG: Session logging
+        CLI ->> LOG: log_query_session(<br/>  query, results,<br/>  answer, collection_name<br/>)
+        LOG ->> LOG: write logs/YYYYMMDD_HHMMSS.log<br/>CONFIG + query + chunks + answer
+    end
+
+    CLI -->> User: done
+```
+
+---
+
 ## Data Flow Detail
 
 ```mermaid
