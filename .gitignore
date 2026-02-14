@@ -25,3 +25,6 @@ corpus/download.log
 
 # vector database
 corpus/vector_db/
+
+# query logs
+logs/

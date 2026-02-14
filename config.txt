@@ -11,6 +11,7 @@
 # collection_name back to "stress_test_docs_1k" (no re-embedding needed).
 # ────────────────────────────────────────────────────────────────────
 
-chunk_size       = 6000
+chunk_size       = 10000
 chunk_overlap    = 200
-collection_name  = stress_test_docs_6k
+collection_name  = stress_test_docs_10k
+beep_on_answer   = true

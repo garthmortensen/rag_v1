@@ -16,8 +16,10 @@ import os
 
 import chromadb
 from langchain_huggingface import HuggingFaceEmbeddings
+from rich.console import Console
+from rich.panel import Panel
 
-from src.config import CFG
+from src.config import CFG, print_config
 from src.utils import select_best_model
 
 logger = logging.getLogger(__name__)
@@ -28,6 +30,25 @@ VECTOR_DB_DIR = os.path.join("corpus", "vector_db")
 COLLECTION_NAME = str(CFG["collection_name"])
 METADATA_CSV = os.path.join("corpus", "metadata.csv")
 DEFAULT_BATCH_SIZE = 500
+
+console = Console()
+
+
+def print_ascii_banner():
+    console.print(
+        Panel.fit(
+            """[bold dark_orange]
+III N   N   JJJ EEEEE  SSSS TTTTT III  OOO  N   N 
+ I  NN  N    J  E     S       T    I  O   O NN  N 
+ I  N N N    J  EEEE   SSS    T    I  O   O N N N 
+ I  N  NN J  J  E         S   T    I  O   O N  NN 
+III N   N  JJ   EEEEE SSSS    T   III  OOO  N   N 
+[/bold dark_orange]
+------------------------------------------------
+""",
+            border_style="grey39",
+        )
+    )
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -140,6 +161,9 @@ def embed_and_store(
         logger.warning("No chunks to embed.")
         return 0
 
+    print_ascii_banner()
+    print_config()
+
     # ── 1. Prepare lookup and models ────────────────────────────────
     doc_id_map = load_doc_id_map(metadata_csv)
     embedding_fn = get_embedding_function()
@@ -180,6 +204,7 @@ def embed_and_store(
         if csv_entry:
             meta["doc_id"] = csv_entry["doc_id"]
             meta["title"] = csv_entry.get("title", "")
+            meta["category"] = csv_entry.get("category", "")
             meta["author"] = csv_entry.get("author", "")
             meta["source_url"] = csv_entry.get("source_url", "")
             meta["source_type"] = csv_entry.get("source_type", "")

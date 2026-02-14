@@ -32,6 +32,7 @@ SAMPLE_CSV_ROWS = [
         "source_url": "https://example.com/credit_risk.pdf",
         "local_path": "corpus/raw_data/credit_risk_models.pdf",
         "title": "Credit Risk Models",
+        "category": "Proposed Stress Test Model Documentation",
         "author": "www.federalreserve.gov",
     },
     {
@@ -40,6 +41,7 @@ SAMPLE_CSV_ROWS = [
         "source_url": "https://example.com/transparency.html",
         "local_path": "corpus/raw_data/transparency_qas.html",
         "title": "Transparency Q&As",
+        "category": "General",
         "author": "www.federalreserve.gov",
     },
 ]
@@ -198,8 +200,8 @@ class TestEmbedAndStore(unittest.TestCase):
         mock_get_emb.return_value = mock_embedding_fn
 
         mock_load_map.return_value = {
-            "corpus/raw_data/a.pdf": {"doc_id": "AAA", "title": "", "author": "", "source_url": "", "source_type": "pdf"},
-            "corpus/raw_data/b.html": {"doc_id": "BBB", "title": "", "author": "", "source_url": "", "source_type": "html"},
+            "corpus/raw_data/a.pdf": {"doc_id": "AAA", "title": "", "category": "", "author": "", "source_url": "", "source_type": "pdf"},
+            "corpus/raw_data/b.html": {"doc_id": "BBB", "title": "", "category": "", "author": "", "source_url": "", "source_type": "html"},
         }
 
         chunks = [
@@ -220,7 +222,7 @@ class TestEmbedAndStore(unittest.TestCase):
     def test_metadata_enriched_from_csv(
         self, mock_load_map, mock_get_emb, mock_get_col
     ):
-        """Chunk metadata includes doc_id, title, author, source_url, source_type from CSV."""
+        """Chunk metadata includes doc_id, title, category, author, source_url, source_type from CSV."""
         mock_collection, mock_embedding_fn = self._setup_mocks()
         mock_get_col.return_value = mock_collection
         mock_get_emb.return_value = mock_embedding_fn
@@ -246,6 +248,7 @@ class TestEmbedAndStore(unittest.TestCase):
         # Enriched fields from CSV
         self.assertEqual(meta["doc_id"], "1JA8WZFYSY0")
         self.assertEqual(meta["title"], "Credit Risk Models")
+        self.assertEqual(meta["category"], "Proposed Stress Test Model Documentation")
         self.assertEqual(meta["author"], "www.federalreserve.gov")
         self.assertEqual(meta["source_url"], "https://example.com/credit_risk.pdf")
         self.assertEqual(meta["source_type"], "pdf")

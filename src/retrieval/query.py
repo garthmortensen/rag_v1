@@ -19,17 +19,17 @@ Usage (CLI):
 import argparse
 import logging
 import sys
-import textwrap
 
 from rich.console import Console
 from rich.panel import Panel
 
-from src.config import CFG
+from src.config import CFG, print_config
 from src.embedding.model import (
     get_embedding_function,
     get_or_create_collection,
     VECTOR_DB_DIR,
 )
+from src.retrieval.query_logger import log_query_session
 
 # Derive from config so queries hit the same collection that was ingested
 COLLECTION_NAME = str(CFG["collection_name"])
@@ -210,14 +210,13 @@ def _print_results(results: list[dict]) -> None:
     for r in results:
         title = r["metadata"].get("title", "—")
         source = r["metadata"].get("source", "—")
-        preview = textwrap.shorten(r["text"], width=1000, placeholder=" …")
 
         print(f"\n{'─' * 72}")
         print(f"  Rank {r['rank']}  │  distance: {r['distance']:.4f}")
         print(f"  ID:     {r['id']}")
         print(f"  Title:  {title}")
         print(f"  Source: {source}")
-        print(f"  Text:   {preview}")
+        print(f"  Text:   {r['text']}")
 
     print(f"\n{'─' * 72}")
     print(f"  {len(results)} result(s) returned.\n")
@@ -227,11 +226,13 @@ def _generate_and_print_answer(
     query: str,
     chunks: list[dict],
     model: str | None = None,
-) -> None:
+) -> str | None:
     """Call the generation module and pretty-print the LLM answer.
 
     Handles import errors (langchain-ollama not installed) and
     connection errors (Ollama server not running) gracefully.
+
+    Returns the answer text, or None if generation failed.
     """
     try:
         from src.generation.llm import generate_answer, DEFAULT_MODEL
@@ -240,7 +241,7 @@ def _generate_and_print_answer(
             "\n[bold red]Error:[/bold red] langchain-ollama is not installed.\n"
             "  Run: [bold]uv add langchain-ollama[/bold]\n"
         )
-        return
+        return None
 
     model_name = model or DEFAULT_MODEL
     console.print(
@@ -251,12 +252,12 @@ def _generate_and_print_answer(
         answer = generate_answer(query, chunks, model=model_name)
     except ConnectionError as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
-        return
+        return None
     except Exception as exc:
         console.print(
             f"\n[bold red]Generation failed:[/bold red] {exc}\n"
         )
-        return
+        return None
 
     console.print(
         Panel(
@@ -266,6 +267,12 @@ def _generate_and_print_answer(
             padding=(1, 2),
         )
     )
+
+    # Audible alert so the user doesn't have to watch the screen
+    if CFG.get("beep_on_answer", True):
+        print("\a", end="", flush=True)
+
+    return answer
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -303,13 +310,23 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     print_ascii_banner()
+    print_config()
 
     where = _parse_filter(args.filter) if args.filter else None
     results = retrieve_formatted(args.query, n_results=args.top_k, where=where)
     _print_results(results)
 
+    answer = None
     if args.answer:
-        _generate_and_print_answer(args.query, results, model=args.model)
+        answer = _generate_and_print_answer(args.query, results, model=args.model)
+
+    # Log the full session to logs/
+    log_query_session(
+        query=args.query,
+        results=results,
+        answer=answer,
+        collection_name=COLLECTION_NAME,
+    )
 
 
 if __name__ == "__main__":

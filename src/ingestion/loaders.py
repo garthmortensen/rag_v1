@@ -24,6 +24,8 @@ from langchain_community.document_loaders import (
     UnstructuredPowerPointLoader,
     UnstructuredWordDocumentLoader,
 )
+from rich.console import Console
+from rich.panel import Panel
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,26 @@ LOADER_MAP = {
 }
 
 RAW_DATA_DIR = os.path.join("corpus", "raw_data")
+
+console = Console()
+
+
+def print_ascii_banner():
+    console.print(
+        Panel.fit(
+            """[bold green1]
+               .__  .__  __    __  .__                     .___                    
+  ____________ |  | |__|/  |__/  |_|__| ____    ____     __| _/____   ____   ______
+ /  ___/\____ \|  | |  \   __\   __\  |/    \  / ___\   / __ |/  _ \_/ ___\ /  ___/
+ \___ \ |  |_> >  |_|  ||  |  |  | |  |   |  \/ /_/  > / /_/ (  <_> )  \___ \___ \ 
+/____  >|   __/|____/__||__|  |__| |__|___|  /\___  /  \____ |\____/ \___  >____  >
+     \/ |__|                               \//_____/        \/           \/     \/ 
+[/bold green1]
+ --------------------------------
+""",
+            border_style="grey39",
+        )
+    )
 
 
 def load_file(filepath: str) -> list:
@@ -75,6 +97,8 @@ def load_directory(directory: str = RAW_DATA_DIR) -> list:
     Returns a flat list of Documents from every supported file found.
     Unsupported file types are skipped with a warning.
     """
+    print_ascii_banner()
+
     all_docs = []
     files = sorted(glob.glob(os.path.join(directory, "*")))
 

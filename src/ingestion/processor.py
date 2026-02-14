@@ -10,6 +10,7 @@ import logging
 import sys
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from src.config import CFG
 from src.embedding.model import embed_and_store
 from src.ingestion.downloader import download_files

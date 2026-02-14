@@ -52,6 +52,35 @@ uv run pytest
 
 This project uses [Commitizen](https://commitizen-tools.github.io/commitizen/) to standardize commit messages, automate versioning, and generate changelogs.
 
+## Configuration
+
+Pipeline settings are controlled by `config.txt` at the project root:
+
+```text
+chunk_size       = 6000
+chunk_overlap    = 200
+collection_name  = stress_test_docs_6k
+```
+
+| Key | What it does | Default |
+|-----|-------------|---------|
+| `chunk_size` | Characters per chunk | `1000` |
+| `chunk_overlap` | Overlap between consecutive chunks | `100` |
+| `collection_name` | ChromaDB collection to write/read | `stress_test_docs_1k` |
+
+### Switching between embedding sets
+
+Each `collection_name` is a separate ChromaDB collection stored in `corpus/vector_db/`. Changing the name does **not** delete existing collections — they coexist side-by-side.
+
+1. Edit `config.txt` with the desired settings.
+2. Re-run the ingestion pipeline to build (or rebuild) that collection:
+   ```bash
+   uv run python -m src.ingestion.processor
+   ```
+3. Queries automatically use whichever `collection_name` is set in `config.txt`.
+
+To switch back, just change `collection_name` and query — no re-ingestion needed if the collection already exists.
+
 ## Data Acquisition
 
 To download the stress testing corpus:
@@ -119,12 +148,14 @@ Add the `--answer` flag for a ChatGPT-like experience — retrieves the top-k ch
 
 ```text
 rag_stress_testing/
+├── config.txt                 # Pipeline settings (chunk size, collection name)
 ├── corpus/
 │   ├── data_sources.csv       # URLs and metadata for downloading
 │   ├── metadata.csv           # Auto-generated download metadata
 │   ├── raw_data/              # Downloaded files (HTML, CSV, PDF, etc.)
 │   └── vector_db/             # ChromaDB persistent storage (HNSW index)
 ├── src/
+│   ├── config.py              # Reads config.txt key=value settings
 │   ├── utils.py               # RAM-aware embedding model selection
 │   ├── ingestion/
 │   │   ├── downloader.py      # Downloads files from data_sources.csv
@@ -223,8 +254,9 @@ rag_stress_testing/
 
 ### Chunking Strategy
 
-- **Config driven**: Hyperparameters should be easily adjustable in a config file or as function arguments
+- **Config driven**: `chunk_size`, `chunk_overlap`, and `collection_name` are read from `config.txt`
 - **Splitter**: Recursive Character Text Splitter
-- **Chunk Size**: ~1000 characters (good for paragraphs)
-- **Overlap**: ~100 characters (so context isn't lost at the edges)
+- **Chunk Size**: Configurable (default 1000 chars; set to 6000 for richer context)
+- **Overlap**: Configurable (default 100 chars)
+- **Multiple collections**: Each config produces a separate ChromaDB collection — switch instantly by editing `config.txt`
 

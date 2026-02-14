@@ -94,6 +94,25 @@ class TestLoadConfigParsing(unittest.TestCase):
         cfg = load_config(path)
         self.assertEqual(cfg["collection_name"], "a=b=c")
 
+    def test_bool_true_variants(self):
+        """true, yes, 1, on (case-insensitive) should all parse to True."""
+        for word in ("true", "True", "TRUE", "yes", "Yes", "1", "on", "ON"):
+            path = self._write_temp(f"beep_on_answer = {word}\n")
+            cfg = load_config(path)
+            self.assertIs(cfg["beep_on_answer"], True, f"Failed for {word!r}")
+
+    def test_bool_false_variants(self):
+        """false, no, 0, off (case-insensitive) should all parse to False."""
+        for word in ("false", "False", "FALSE", "no", "No", "0", "off", "OFF"):
+            path = self._write_temp(f"beep_on_answer = {word}\n")
+            cfg = load_config(path)
+            self.assertIs(cfg["beep_on_answer"], False, f"Failed for {word!r}")
+
+    def test_default_beep_on_answer(self):
+        """beep_on_answer should default to True when not in config file."""
+        cfg = load_config("/nonexistent/config.txt")
+        self.assertIs(cfg["beep_on_answer"], True)
+
 
 if __name__ == "__main__":
     unittest.main()
