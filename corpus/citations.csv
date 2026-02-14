@@ -1,28 +1,28 @@
-authors,year,title,venue,source_pdf,category,resolved_url,identifier
+authors,year,title,venue,source_pdf,category,resolved_url,download_url,identifier
 "Furstenberg, G.",1970a,"Interstate 
 Differences in Mortgage Renting Risks: An Analysis of Causes,","Journal of Financial and Quantitative Analysis 5: 
-229-42; von Furstenberg, G",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-"Elul, R., N. S. Souleles, S. Chomsisengphet, D. Glennon, and R. Hunt",2010,What ‘Triggers’ Mortgage Default?,,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+229-42; von Furstenberg, G",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+"Elul, R., N. S. Souleles, S. Chomsisengphet, D. Glennon, and R. Hunt",2010,What ‘Triggers’ Mortgage Default?,,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Bajari, P., C.S. Chu, and M. Park",2008,"An Empirical Model of Subprime Mortgage Default From 2000 to 
-2007,",NBER Working Paper #14625,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+2007,",NBER Working Paper #14625,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Foote, C., K, Gerardi, and P. Willen",2008,"Negative Equity and Foreclosure: Theory and Evidence,","Journal of 
-Urban Economics 64, Number 2, 234-245",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-"Bhutta, N., J. Dokko, and H. Shan",2010,"The Depth of Negative Equity and Mortgage Default Decisions,",Federal Reserve Board Working Paper,proposed_stress_test_model_documentation_credit_risk_models.pdf,Federal_Reserve,,
+Urban Economics 64, Number 2, 234-245",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+"Bhutta, N., J. Dokko, and H. Shan",2010,"The Depth of Negative Equity and Mortgage Default Decisions,",Federal Reserve Board Working Paper,proposed_stress_test_model_documentation_credit_risk_models.pdf,Federal_Reserve,,,
 "Elul, R.",2009,"Securitization and Mortgage Default: Reputation vs. Adverse Selection,","Federal Reserve Bank 
-of Philadelphia, Working Paper No",proposed_stress_test_model_documentation_credit_risk_models.pdf,Federal_Reserve,,
+of Philadelphia, Working Paper No",proposed_stress_test_model_documentation_credit_risk_models.pdf,Federal_Reserve,,,
 "Krainer, J. and E. Laderman",2011,"Prepayment and Default in the Mortgage Crisis Period,","Federal Reserve 
-Bank of San Francisco Working Paper",proposed_stress_test_model_documentation_credit_risk_models.pdf,Federal_Reserve,,
+Bank of San Francisco Working Paper",proposed_stress_test_model_documentation_credit_risk_models.pdf,Federal_Reserve,,,
 "Elul, R., N. S. Souleles, S. Chomsisengphet, D. Glennon, and R. Hunt",2010,"What ‘Triggers’ Mortgage 
-Default?",American Economic Review Papers & Proceedings 100(2): 490-94,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Default?",American Economic Review Papers & Proceedings 100(2): 490-94,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Hall, Arden",2000,"Controlling for Burnout in Estimating Mortgage Prepayment Models,","Journal of Housing 
-Economics, 9(4): 215-232",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-"Stock, J. and M. Watson",2025,"Recovering from COVID,",NBER working paper 33857,proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,33857
+Economics, 9(4): 215-232",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+"Stock, J. and M. Watson",2025,"Recovering from COVID,",NBER working paper 33857,proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,https://www.nber.org/system/files/working_papers/w33857/w33857.pdf,33857
 "Siddique, A.",2016,"Risk and Risk Management in the Credit 
-Card Industry.",Journal of Banking and Finance 72: 218–239,proposed_stress_test_model_documentation_credit_risk_models.pdf,DOI,https://doi.org/10.1016/j.jbankfin.2016.07.015.,10.1016/j.jbankfin.2016.07.015.
+Card Industry.",Journal of Banking and Finance 72: 218–239,proposed_stress_test_model_documentation_credit_risk_models.pdf,DOI,https://doi.org/10.1016/j.jbankfin.2016.07.015.,,10.1016/j.jbankfin.2016.07.015.
 "Steffes, E.",2013,"Evaluating the Effect of Affinity Card Programs on 
-Customer Profitability Using Propensity Score Matching.","Journal of Interactive Marketing, 27(2), 83-97",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Customer Profitability Using Propensity Score Matching.","Journal of Interactive Marketing, 27(2), 83-97",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Bellotti, T., and J. Crook",2009,"LGD models for UK Retail Credit Cards,","Credit Research Centre Working 
-Paper, University of Edinburgh Business School",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Paper, University of Edinburgh Business School",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Stock, J. and M. Watson",2025,"Recovering from COVID., NBER working paper 33857.
 639 Model Documentation: Other Retail Model 
 b. Concerns Over Unit Root (Applicable to the Regression Models Only) 
@@ -31,63 +31,63 @@ case of the International Cards Model, delinquency rates) to project values of t
 given period.  As described in Section G.ii.b.(1), models that rely on previous values of the 
 outcome variables are referred to as “autoregressive.","Generally with autoregressive 
 specifications, there are technical concerns that they may not be mean-reverting, meaning the 
-model’s behavior might not necessarily return to a long-term average after a shock",proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,33857
+model’s behavior might not necessarily return to a long-term average after a shock",proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,https://www.nber.org/system/files/working_papers/w33857/w33857.pdf,33857
 Bhatia CreditMetrics,1997,"KMV’s PortfolioManager, and 
-the actuarial approach employed by Credit Suisse First Boston’s CreditRisk+.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+the actuarial approach employed by Credit Suisse First Boston’s CreditRisk+.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Mark,2000,"Gordy (2000); 
-and Allen & Saunders (2003).",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+and Allen & Saunders (2003).",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Weiner,2006,"and 
-cyclicality, as in Keijsers, Dirris, & Kole (2015).",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+cyclicality, as in Keijsers, Dirris, & Kole (2015).",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Sordo,2010,"have evaluated the use of PD, LGD, and EAD estimates 
 representative of the international financial system for purposes of ensuring the adequacy of 
 individual bank reserves as well as for macroprudential purposes.","11 
 The Corporate Model estimates loss at the credit facility level using three independent 
 sub-components: PD (“Corporate PD Model”), LGD (“Corporate LGD Model”), and EAD 
-(“Corporate EAD Model”)",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-Technical Document.; Credit Suisse.,1997,Creditrisk+.,London: Credit Suisse,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-"Gordy, M.",2000,A comparative anatomy of credit risk models.,,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+(“Corporate EAD Model”)",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+Technical Document.; Credit Suisse.,1997,Creditrisk+.,London: Credit Suisse,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+"Gordy, M.",2000,A comparative anatomy of credit risk models.,,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Varshney,2004,"also found that LGDs for unsecured loans exhibit a relatively high correlation with the 
  
-21 See Altman, E.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+21 See Altman, E.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Jacobs Jr,2012,"25 that projected LGD as a non-linear function26 of initial LGD and PDs 
-was previously used.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+was previously used.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Srinivasan,2007,"27 
 Collateral dummy variables are constructed by combining granular collateral description 
 information and used to differentiate the type of collateral that secures the loan as well as the lien 
-position.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+position.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Saurina,2009,"observe a 
 one-year LEQ of around 48 percent, suggesting that EAD is consistent across different banking 
-systems.",35  Jacobs Jr,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+systems.",35  Jacobs Jr,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Corporate Model 
-and Yang",2019,reports LEQ values ranging between 40 percent and 60 percent.,,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-Moody's,2019,analysis of middle-market corporate borrowers using data pooled from multiple U.,S,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+and Yang",2019,reports LEQ values ranging between 40 percent and 60 percent.,,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+Moody's,2019,analysis of middle-market corporate borrowers using data pooled from multiple U.,S,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Leow and Mues,2012,"on the other hand, first estimate the 
 probability of a defaulted loan undergoing repossession as a function of loan characteristics, 
 estimate the discount in sale prices for a repossessed property as a function of loan 
 characteristics, and then computed the predicted LGD using the projected probability of 
-repossession and the predicted discount in sale prices.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+repossession and the predicted discount in sale prices.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Bailey, Muth, and Nourse",1963,"is 
 a commonly used method for estimating real estate price indices.","94  Modern home price indices 
-are commonly estimated using adaptations of the repeat-sale methodology",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+are commonly estimated using adaptations of the repeat-sale methodology",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Elul, R., N. S. Souleles, S. Chomsisengphet, D. Glennon, and R. Hunt",2010,"What ‘Triggers’ Mortgage Default?” American Economic Review Papers & Proceedings 100(2): 490-94; 
-An, X.",", Y",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-"Vandell, K.D. and Thibodeau, T.",1985,Estimation of Mortgage Defaults Using Disaggregate Loan History Data.,,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+An, X.",", Y",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+"Vandell, K.D. and Thibodeau, T.",1985,Estimation of Mortgage Defaults Using Disaggregate Loan History Data.,,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Hale, Krainer, and McCarthy",2020,"152 compares model projections using 
 variations of loan-level, bottom-up models (based on binomial logit structures) to “top-down” 
 models that aggregate loans prior to making projections.","In particular, the top-down model 
 approach estimates two models where the default rate in a given quarter is based on average loan 
 characteristics and macroeconomic variable values, aggregated to the county and national levels, 
-respectively",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+respectively",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Elul,2009,"finds that low credit score borrowers have higher risk of becoming 
 delinquent; the paper notes that credit scores have a greater impact on subprime low-doc 
 delinquency rates than they do on similar full-doc loans.","156  The score generally reflects the 
 overall credit performance of a borrower—if a borrower becomes past due on any of his loan 
 obligations or becomes credit constrained, it is reflected in his credit score, which allows banks 
-to differentiate borrowers of different creditworthiness and is a strong indicator of future default",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+to differentiate borrowers of different creditworthiness and is a strong indicator of future default",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Krainer and Laderman,2011,"find that borrowers with low credit scores experienced a relatively 
 larger increase in mortgage defaults during the financial crisis period.","157  Overall, these results 
 confirm the importance of debt burden, equity position, income uncertainty, and credit scores in 
-assessing the risk of mortgage defaults",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+assessing the risk of mortgage defaults",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Liu and 
 Tien",2018,"159 find that subprime borrowers with underwater fixed-rate mortgages have higher 
 cure rates, although the same is not found for ARMs.","The model used by the Department of 
@@ -95,43 +95,43 @@ Housing and Urban Development’s Mutual Market Insurance Fund, referenced earli
 sub-section, shows cure rates are lower for high and low credit score borrowers compared to 
 borrowers with middling scores; the 2024 actuarial review (ITDC, 2023-2024)
 160 indicates that 
-cure rates are highest for borrowers with credit scores around 660",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+cure rates are highest for borrowers with credit scores around 660",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Krainer and Laderman,2011,"Board analysis of 
 First Lien PD Data shows that this effect is non-linear; relative risks of becoming 
 delinquent decrease faster for credit scores above 700 and again above 780, as 
 demonstrated by the negative coefficients on these two knots.","Note that the model 
 assigns a value of “0” in the credit score field when it is missing and applies a flag to 
 identify loans with missing credit scores to separately assess the risk of loans missing 
-credit scores",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+credit scores",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Elul, R., N. S. Souleles, S. Chomsisengphet, D. Glennon, and R. Hunt",2010,"What ‘Triggers’ Mortgage 
-Default?” American Economic Review Papers & Proceedings 100(2): 490-94.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Default?” American Economic Review Papers & Proceedings 100(2): 490-94.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Hall,2000,"175 and others note that certain loans pay off more slowly than 
 expected due to factors not otherwise captured in the models.","To capture this ‘burnout’ 
 effect, the model includes a simple measure of previous opportunities to refinance by 
 comparing the fixed mortgage rate (denoted by time t=0) against mortgage rates 
-prevailing over the life of the loan (denoted by time t=k)",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+prevailing over the life of the loan (denoted by time t=k)",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Calhoun and Deng,2002,"162 Model Documentation: First Lien Mortgage Model 
 and less likely to cure.","While higher credit borrowers are less likely to go initially 
 delinquent, when they do it is generally for some sustained shock, like unemployment or 
-loss of income, making them less likely to cure",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+loss of income, making them less likely to cure",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Lambie-Hanson,2016,and further evidenced by the negative coefficient on this variable.,"As previously noted, 
 when using the model to project loss rates, a single value of this variable is applied to all 
 loans, based on the share of industry balance reported in the FR Y-14M that is secured by 
-property in a judicial state",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+property in a judicial state",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Moench, E., J. Vickery, and D. Aragon",2010,Why is the Market Share of Adjustable-Rate Mortgages So Low.,"Federal Reserve Bank of New York 
-Current Issues in Economics and Finance 16(8)",proposed_stress_test_model_documentation_credit_risk_models.pdf,Federal_Reserve,,
-"Elul, Payne, and Tilson",2023,"Elul, R.",", A",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Current Issues in Economics and Finance 16(8)",proposed_stress_test_model_documentation_credit_risk_models.pdf,Federal_Reserve,,,
+"Elul, Payne, and Tilson",2023,"Elul, R.",", A",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Elul,2009,"shows that shorter initial rate periods 
 were historically offered to weaker borrowers; this variable proxies for the effect of these 
 products being offered to weaker borrowers.","This is evidenced by the positive coefficient 
-on this variable",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+on this variable",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Pennington-Cross, A. and Ho, G.",2010,The Termination of Subprime Hybrid and Fixed -Rate Mortgages.,"Real 
-Estate Economics, 38: 399-426",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Estate Economics, 38: 399-426",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Pennington-Cross and Ho,2010,"and confirmed by the coefficients 
 on these variables.","The above paper builds on other literature and theory that suggests 
-ARM borrowers commonly refinance around the first reset date",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+ARM borrowers commonly refinance around the first reset date",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Lambie-Hanson,2016,"204 Model Documentation: First Lien Mortgage Model 
-in Section C.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+in Section C.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Lambie-Hanson,2016,"207 Model Documentation: First Lien Mortgage Model 
   Prime Alt-A Subprime 
 previous year 
@@ -155,29 +155,29 @@ residence
 liquidation 
 occurs after 
 2010 Q3 
-0.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+0.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Lekkas, Quigley, and Van Order",1993,"224 regressed loss severity rates on 
  
-223 See Section C.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+223 See Section C.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Wilson,1995,"225, 
 Crawford and Rosenblatt (1995)226, Berkovec et al.","(1998)227, DeFranco (2002)228, Pennington-
 Cross (2003), Calem and LaCour-Little (2004)229, Capozza and Thomson (2005)230, Qi and Yang 
-(2009)231, and Leow and Mues (2012)232, use similar model structures",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+(2009)231, and Leow and Mues (2012)232, use similar model structures",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Tong, Mues, and Thomas",2013,"233, which uses a zero-adjusted gamma approach to estimate a model using data in the UK.","Outside of the first lien mortgage space, corporate debt LGD studies also observe that loss 
 severities tend to be bi-modal (either most of the balance is recovered or very little of it is) and 
 are generally between 0 (full recovery) and 1 (no recovery); to account for this, they use other 
 model types, such as the beta regression, fractional response regression, and non-parametric 
-methods",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+methods",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Goodman and Zhu,2016,"235 tabulated loss severity rates of defaulted Freddie Mac conventional conforming loans 
 by LTV , credit score, vintage, and size, and compared the actual loss severity rates with those 
 presumed in Freddie Mac’s initial Credit Risk Transfer (CRT) deals.","The data also has been used to identify changes in the foreclosure process over time and 
-across geography",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+across geography",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Lambie-
 Hanson",2016,"239 found that the increases in liquidation timelines after the 2008 financial crisis 
 were concentrated in states with judicial foreclosure processes.","Support for Model Structure 
 Two-Stage Structure 
  
-235 Goodman, Laurie, and Jun Zhu",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+235 Goodman, Laurie, and Jun Zhu",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "An and 
 Cordell",2017,"there is reason to believe liquidation timelines extend during periods of housing 
 market stress, as a large number of defaults at once can overwhelm the legal foreclosure 
@@ -185,171 +185,171 @@ infrastructure.","Additionally, the 75
 th percentile value reflects that due to regime shifts in the
 214 Model Documentation: First Lien Mortgage Model 
 mortgage market (see An and Cordell, 2019), liquidation timelines have lengthened in the 
-aftermath of the 2008 financial crisis",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+aftermath of the 2008 financial crisis",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Pennington-Cross,2003,underscores that different classes of loans behave substantially differently.,"Analysis of historical 
 PLS and GSE data confirm that loans characterized as Subprime have consistently higher loss 
-severities than Alt-A or (especially) Prime loans, even accounting for other observable factors",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+severities than Alt-A or (especially) Prime loans, even accounting for other observable factors",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Ben-David and Yao,2017,246 and could be reflective of appraisal bias.,"Loss 
 severity is especially high for cash-out refinances, when equity is extracted from the 
-property at origination",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+property at origination",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Stock and 
 Watson",2025,"find that the COVID shock was notable, but had “largely disappeared by late 
 2022.","”
 278  This finding raises concerns that if data covering 2020-2022 are used to estimate the 
 model coefficients, these coefficients may be impacted by the distortions that caused these 
-unusual observed relationships",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+unusual observed relationships",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Stock, J. and M. Watson",2025,"Recovering from COVID,” NBER working paper 33857.","279 The treatment is applied to 2020 and 2021, but not 2022, based on the Board’s analysis that distortions in the 
-housing market mostly were resolved by the end of 2021",proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,33857
+housing market mostly were resolved by the end of 2021",proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,https://www.nber.org/system/files/working_papers/w33857/w33857.pdf,33857
 "Hale, Krainer, and McCarthy",2020,"compares model projections using 
 variations of loan-level, bottom-up models (based on binomial logit structures) to “top-down” 
 models that aggregate loans prior to making projections.","In particular, the top-down model 
 approach estimates two models where the default rate in a given quarter is based on average loan 
 characteristics and macroeconomic variable values, aggregated to the county and national levels 
-respectively",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+respectively",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Elul,2009,"finds that low credit scores have a greater impact on 
 subprime, low-documentation delinquency rates than they do on similar full-documentation 
 loans.","297  The score generally reflects the overall credit performance of a borrower— if a 
 borrower becomes past due on any of their loan obligations or becomes credit constrained, this is 
 reflected in their credit score, which allows banks to differentiate borrowers of different 
-creditworthiness and is a strong indicator of future default",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+creditworthiness and is a strong indicator of future default",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Krainer and Laderman,2011,"find 
 that borrowers with low credit scores experienced a relatively larger increase in first-lien 
 mortgage defaults during the financial crisis period.","Overall, these results confirm the 
 importance of debt burden, equity position, income uncertainty, and credit scores in assessing the 
-risk of first-lien mortgage and home equity defaults",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+risk of first-lien mortgage and home equity defaults",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Liu and 
 Tien",2018,"find that subprime borrowers with underwater fixed-rate mortgages have higher cure 
-rates, although the same is not found for adjustable-rate mortgages (ARMs).",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+rates, although the same is not found for adjustable-rate mortgages (ARMs).",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Mayer, Pence, and Sherlund",2009,"299 find that borrowers with 
 piggyback second liens tend to default at a higher rate after controlling for combined LTV .","Calem and Sarama (2017)
 300 find that borrowers with multiple liens sometimes continue to make 
 payments on one lien while defaulting on the other and build a framework for explaining which 
-types of borrowers exhibit this behavior",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+types of borrowers exhibit this behavior",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Jagtiani and Lang,2011,"who find that borrowers with larger first-lien mortgage monthly 
  
 298 HELOCs can be either first lien products or subordinate lien products; first lien HELOCs make up a minority, 
 albeit a substantial one, of HELOC exposures reported on FR Y-14M, Schedule B (Home Equity).","The Board 
-defines HELs based on their junior lien status, so all HELs are junior (or subordinate) lien",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+defines HELs based on their junior lien status, so all HELs are junior (or subordinate) lien",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Krainer and Laderman,2011,"Board analysis of Home 
 Equity Data shows that this effect is non-linear; risks of becoming delinquent decrease 
 faster for credit scores above 680, as demonstrated by the negative coefficient on the knot 
 at 680 variable in this equation.","• Wholesale broker flag: When the loan is originated through a wholesale channel (through 
-a broker), the lender has less direct control over the underwriting",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+a broker), the lender has less direct control over the underwriting",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Johnson and Sarama,2015,"and 
 independently confirmed by the coefficients on these variables.","This risk is maximized 
 one quarter after end-of-draw, before declining slightly (but remaining well elevated 
-compared to prior to end-of-draw)",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+compared to prior to end-of-draw)",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Hall and Epouhe,2016,"and independently confirmed by the 
 coefficients on these variables.","At end-of-draw, borrowers have less incentive to keep 
-their HELOC on the book, as they no longer have access to the credit line",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+their HELOC on the book, as they no longer have access to the credit line",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "LaCour-Little, Calhoun, and Yu",2011,"311  As a result, loans marked as being for the purpose of purchase are treated as 
 riskier than other loans; this finding is confirmed by the positive coefficient on this 
 variable.","• Spread at origination: Similar to HELOCs, for HELs, spread at origination is defined as 
 the origination interest rate minus a reference rate, except that for HELs, which are 
 typically fixed rate and therefore not contractually linked to an index, the reference rate is 
-the 10-year Treasury yield",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+the 10-year Treasury yield",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Lambie-Hanson,2016,"339 
 • Vintage: The loan vintage (year of origination) is assumed to be the same for the first lien 
 as it is for the HEL or the HELOC, as the true first lien origination date is not reported.","• Year-over-year percent change in house price index: This term is identical for all loans in 
-a given geography liquidating on the same date",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+a given geography liquidating on the same date",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Calem and Sarama,2017,"provide a framework 
 for determining the factors that would lead to borrowers becoming delinquent on their first lien 
 loan while continuing to stay current on their junior lien loan.","Borrowers with stable equity 
 positions have an incentive to temporarily mismatch , while borrowers with negative equity and 
-severe financial distress tend to default",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+severe financial distress tend to default",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Per Calem and Sarama,2017,"borrowers with one current loan and one delinquent loan on a property are more likely to 
 cure the delinquent loan than equivalent borrowers without a current loan.","However, the authors 
 note that negative equity and severe financial distress are associated with borrowers defaulting 
-on both loans",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+on both loans",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Stock and 
 Watson",2025,"find that the COVID shock was notable but had “largely disappeared by late 
 2022.","”
 368  This finding raises concerns that if data covering 2020–2022 are used to estimate the 
 model coefficients, these coefficients may be impacted by the distortions that caused these 
-unusual observed relationships",proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,33857
+unusual observed relationships",proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,https://www.nber.org/system/files/working_papers/w33857/w33857.pdf,33857
 Gross and Souleles,2002,"376 used a 
 definition of default based on whether an account is three or more cycles past due, and more 
 recently, Sengupta and Wheeler (2024)377 defined default as 90 or more days past due.","Based on 
  
-373 Charge card accounts are defined as in default if they are 90 or more days past due or if they are charged off",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+373 Charge card accounts are defined as in default if they are 90 or more days past due or if they are charged off",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Gross and Souleles,2002,"analyze credit card delinquency and personal bankruptcy in 
 the 1990s using panel data on credit card accounts.","This is an important paper because their 
-modeling framework has been adopted by other related papers",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+modeling framework has been adopted by other related papers",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Agarwal and Liu,2003,"provide evidence 
 of a significant impact of unemployment on credit card delinquency.","This is notable, as previous
 409 Model Documentation: Credit Card Model 
 empirical studies did not consistently find a significant effect of macroeconomic factors on 
-bankruptcy",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+bankruptcy",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 While Gross and Souleles,2002,"did not find a significant impact of unemployment 
 on credit card default, this result can be explained by insufficient variation in the data at the time 
 their analysis was performed.","The findings of Agarwal and Liu (2003) demonstrate the 
-importance of incorporating unemployment into the model",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+importance of incorporating unemployment into the model",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Shumway,2001,"395 makes the theoretical point that “a multi-period logit 
 model is equivalent to a discrete-time hazard model [under certain distributional assumptions].","”  
-Sueyoshi (1995)396 makes a similar point",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Sueyoshi (1995)396 makes a similar point",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Agarwal, Ambrose, and Chomsisengphet",2005,"397 in a study of auto 
 loans.","Other work reviewed includes literature surveys of duration models, such as Kiefer 
-(1988)398, Canals-Cerda and Stern (2002)399, and Van Den Berg (2009)400",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+(1988)398, Canals-Cerda and Stern (2002)399, and Van Den Berg (2009)400",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Han and 
 Hausman",1990,"401, Meyer (1990)402, and McCall (1996)403.","394 “Multi-period” means the model is being used to project default in different time periods; “multinomial” means 
-that that different possible outcomes are considered; and “logit” refers to specification of the equation",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+that that different possible outcomes are considered; and “logit” refers to specification of the equation",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Gross and Souleles,2002,"Agarwal and Liu (2003), Agarwal, Ambrose, and Chomsisengphet (2005), and others, the 
 PD model uses a logit specification.","Advantages of this specification are the ease of 
-interpretation of results and its ideal numerical properties",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+interpretation of results and its ideal numerical properties",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Heckman and Singer,1986,"405 rely on a semi-parametric approach, a modeling technique that 
 allows more flexibility in its structure.","406  A significant drawback to this type of technique is the 
 added complexity of implementation and interpretation, as well as its numerical instability, 
-which necessarily results in a substantial increase in model risk",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+which necessarily results in a substantial increase in model risk",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Canals-Cerda and Rilstone,2007,"and Canals-
-Cerda and Gurmu (2007).",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-Baker and Melino,2000,and Canals-Cerda and Gurmu (2007).,"Baker, M",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Cerda and Gurmu (2007).",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+Baker and Melino,2000,and Canals-Cerda and Gurmu (2007).,"Baker, M",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Canals-
 Cerdá",2012,"409 and Canals-Cerdá (2014) demonstrate a strong relationship between the 
 macroeconomic environment and default risk, while Canals-Cerdá (2015) demonstrates that this 
 relationship varies for different types of borrowers; in particular, prime accounts are more 
 susceptible to changes in the macroeconomic environment compared to subprime accounts.","Finally, analysis conducted during and immediately after the COVID-19 pandemic 
 provided additional insight into features of the market that could not be easily identified 
-previously",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+previously",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Notably, Sengupta and Wheeler",2024,"demonstrate that unlike during the 2008 
 financial crisis period, the sharp increase in the unemployment rate was not associated with an 
 increase in credit card default.","This was attributed to financial assistance provided to borrowers 
 via government support programs during this period, which mitigated the impacts of the 
-unemployment rate",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+unemployment rate",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Barnes, Bopst, and Driscoll",2025,"413  This term accounts for these seasonal 
 differences in starting position.","• Calendar quarter of projected default: As noted directly above, credit card delinquency 
 and default is highly seasonal due to differences in consumer balance sheets over the 
-course of the year",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+course of the year",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Kaufman,2014,"show evidence for important cutoffs 
 at both 620 and 660.","Laufer & Paciorek (2022) discuss the history of credit scoring thresholds and note that the 
-Federal Housing Administration has a cutoff at 580 for borrowers making down payments of less than 10 percent",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Federal Housing Administration has a cutoff at 580 for borrowers making down payments of less than 10 percent",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Stroebel,2018,"documents notable credit score discontinuities in credit 
 card lending at scores of 660, 700, 720, 740, and 760.","Most recently, Agarwal, Presbitero, Sil va, & Wix (2023) uses 
-cutoffs at 660, 720, and 780",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+cutoffs at 660, 720, and 780",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Canals-Cerdá,2015,"423 Model Documentation: Credit Card Model 
 Of this 0.","1 percent sample, further refinements are made to ensure the estimation data are 
-representative of the data on which the model parameters are applied",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+representative of the data on which the model parameters are applied",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Agarwal and Liu,2003,"The Board reviewed Bank Cards Data and found relationships between credit score and default risk observed in 
 academic literature can be replicated in this dataset as well.","428 Model Documentation: Credit Card Model 
 Next, recently originated accounts do not have a reported refreshed credit score available 
-are adjusted",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+are adjusted",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Lacour-Little,2002,": and An et al (2010): An, Xudong and Deng, Yongheng and 
 Rosenblatt, Eric and Yao, Vincent, 2010, Model Stability and the Subprime Mortgage Crisis, Journal of Real Estate 
 Finance and Economics.","437 Model Documentation: Credit Card Model 
-flexibility in structure compared to an account-level approach",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-"Chen, Q., D. Glennon, and A. Golan",2020,Estimating Conditional Mortgage Delinquency Transition Matrices.,Office of Comptroller of the Currency Working Paper 2020-05,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+flexibility in structure compared to an account-level approach",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+"Chen, Q., D. Glennon, and A. Golan",2020,Estimating Conditional Mortgage Delinquency Transition Matrices.,Office of Comptroller of the Currency Working Paper 2020-05,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Bellotti and Crook,2009,"454 show 
 using data on credit cards in the United Kingdom that macroeconomic factors such as bank 
 interest rates and the unemployment rate impact LGD, indicating that LGD should be expected 
 to be higher during economic downturns than during benign periods.","The LGD model used in 
 the supervisory stress test draws on Banerjee and Canals-Cerdá (2012), which similarly uses 
-aggregated data from FR Y-9C reports to calibrate LGD",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+aggregated data from FR Y-9C reports to calibrate LGD",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Bellotti, T., and J. Crook",2009,"LGD models for UK Retail Credit Cards,” Credit Research Centre Working 
 Paper, University of Edinburgh Business School.","455 Less than 1 percent of accounts are secured by collateral, based on analysis of FR Y -14M data as of December 
-2024",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+2024",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Agarwal, Ambrose, and Liu",2006,"462 studied the utilization of home equity lines at and 
 after origination and found that borrowers with a higher expectation of future deterioration in 
 credit quality originate credit lines to preserve financial flexibility.","They also find a statistical 
-relationship between a drop in risk score and an increase in credit line utilization",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+relationship between a drop in risk score and an increase in credit line utilization",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Similarly, 
 Jimenez, Lopez, and Saurina",2009,"using a sample of corporate credit lines in Spain, find that 
 firms that default on their credit lines have significantly higher utilization rates; these rates 
@@ -357,198 +357,198 @@ increase as default approaches.","Qi (2009)
 463 studied EAD for a sample of current and delinquent accounts over the period 
 of 1998–2008 using loan equivalent factor (LEQ)464 as the analysis variable and found that 
 borrower and account risk attributes—like account utilization rate, account age, account balance, 
-credit score, and credit limit—are significant drivers of LEQ",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+credit score, and credit limit—are significant drivers of LEQ",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Canals-Cerdá,2012,"and Canals-Cerdá and Kerr (2014)465 similarly find that EAD 
 did not notably increase during the 2008 financial crisis period.","This finding that EAD is 
 associated more with account and borrower characteristics than macroeconomic characteristics 
-informs the development of the Credit Card EAD Model design",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+informs the development of the Credit Card EAD Model design",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Canals-Cerdá and Kerr,2014,"and further in Section 
-E.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+E.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Canals-Cerdá and Kerr,2014,"it is not susceptible to extreme values, as the 
 generally stable credit limit is used in the denominator—in line with the stress testing principle 
 of robustness and stability.","Unlike EADF, it provides reasonable results with a simple model 
-structure, in line with the stress testing principle of simplicity",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+structure, in line with the stress testing principle of simplicity",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Canals-Cerdá and Kerr,2015,"522 The house price index enters the current equation523 as the year-over-year change to 
 proxy for changes in household wealth; the negative coefficient on HPI in the equations 
 demonstrate that increases in HPI are associated with lower default risk, while decreases in HPI 
 are associated with higher default risk.","The paragraph above describes the treatment of macroeconomic variables when 
-estimating the model parameters",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-Lacour-Little,2002,and An et al (2010).,"Calem, Paul S",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+estimating the model parameters",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+Lacour-Little,2002,and An et al (2010).,"Calem, Paul S",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Canals-Cerdá,2015,"534 Model Documentation: Auto Model 
-Schedule A.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-"Hale, Krainer, and McCarthy",2020,"Galina Hale, John Krainer, and Erin McCarthy, 2020.","“Aggregation Level in Stress-Testing Models,” International Journal of Central Banking",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Schedule A.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+"Hale, Krainer, and McCarthy",2020,"Galina Hale, John Krainer, and Erin McCarthy, 2020.","“Aggregation Level in Stress-Testing Models,” International Journal of Central Banking",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 "Crook, J.",2009,Credit scoring with macroeconomic variables using survival analysis.,"Journal of 
-the Operational Research Society, 60(12), 1699-1707",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-Rey,2018,"Hélène Rey, 2018.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+the Operational Research Society, 60(12), 1699-1707",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+Rey,2018,"Hélène Rey, 2018.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Xia and Zhou,2023,"Xia, Tian and Zhou, 
 Hang, 2023.","“Commodity terms of trade co-movement: Global and regional factors,” Journal of International 
-Money and Finance",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+Money and Finance",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Crook and Banasik,2012,"Crook, J & Banasik, J, 2012, “Forecasting and explaining aggregate 
 consumer credit delinquency behaviour”, International Journal of Forecasting, 28(1), 145-60.","632 Model Documentation: Other Retail Model 
 level of unemployment rate in these portfolios—justified adding the level of unemployment only 
-to the Private Student Loan model specification",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+to the Private Student Loan model specification",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Rey,2018,"634 Model Documentation: Other Retail Model 
-both global and local macroeconomic conditions is also seen in several studies.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
+both global and local macroeconomic conditions is also seen in several studies.",,proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
 Xia and Zhou,2023,"635 Model Documentation: Other Retail Model 
 Board—such as testing for seasonal effects in the regression specification and assessing 
 seasonality based on the calculated coefficients— demonstrates that seasonality is not a 
 meaningful concern for portfolios other than the student loan portfolio.","This is further justified 
 conceptually by the fact that many student loans start requiring payments shortly after 
-graduation, which is concentrated during certain parts of the calendar year",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,
-"Stock, J. and M. Watson",2025,Recovering from COVID.,", NBER working paper 33857",proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,33857
+graduation, which is concentrated during certain parts of the calendar year",proposed_stress_test_model_documentation_credit_risk_models.pdf,Unknown,,,
+"Stock, J. and M. Watson",2025,Recovering from COVID.,", NBER working paper 33857",proposed_stress_test_model_documentation_credit_risk_models.pdf,NBER,https://www.nber.org/papers/w33857,https://www.nber.org/system/files/working_papers/w33857/w33857.pdf,33857
 Stafford,2022,"does not focus 
 on or advocate for the Dimson beta paradigm, but rather includes the estimates summarized in 
 the table as descriptive statistics (in prelude to constructing alternative measures of private equity 
-risk).",,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,
+risk).",,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,,
 "Lags 
 Used 
 Total Beta 
-Anson",2007,147 Venture Economics 1985–2005 3 0.,,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,
-Woodward,2009,148 Cambridge Associates 1996–2008 5 1.,,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,
+Anson",2007,147 Venture Economics 1985–2005 3 0.,,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,,
+Woodward,2009,148 Cambridge Associates 1996–2008 5 1.,,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,,
 "Rhodes-
 Kropf",2013,"149 
-Preqin 1980–2007 4 0.",,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,
-Stafford,2022,150 Preqin 1996–2014 3 0.,,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,
+Preqin 1980–2007 4 0.",,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,,
+Stafford,2022,150 Preqin 1996–2014 3 0.,,proposed_stress_test_model_documentation_market_risk_models.pdf,Unknown,,,
 Abdymomunov and Curti,2020,"who 
 show that, starting from the 99th percentile of the pooled industry loss distribution, total assets 
-correlate significantly with the size of operational losses.",,proposed_stress_test_model_documentation_operational_risk_model.pdf,Unknown,,
+correlate significantly with the size of operational losses.",,proposed_stress_test_model_documentation_operational_risk_model.pdf,Unknown,,,
 Abdymomunov and Curti,2020,"show that asset size is significant in explaining large operational 
 loss realizations, and scaling by asset size across firms with different characteristics can increase 
 the stability of loss estimates relative to estimates pro duced for a firm using only its own data.","This finding motivates the scaling of loss events in the distributional model and the production of 
-a simulated aggregate loss distribution for each firm based on an industry pool of tail loss events",proposed_stress_test_model_documentation_operational_risk_model.pdf,Unknown,,
+a simulated aggregate loss distribution for each firm based on an industry pool of tail loss events",proposed_stress_test_model_documentation_operational_risk_model.pdf,Unknown,,,
 "Hirtle, Kovner, Vickery and Bhanot",2016,"3 which shows 
 that a simple top-down framework can be used to compute projections of bank capital and net 
 income in response to macroeconomic scenarios.","A top-down approach typically uses data series 
 of income and expense components at the firm level, in contrast to more granular bottom-up 
-approaches that can be based on detailed transaction level microdata",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,
+approaches that can be based on detailed transaction level microdata",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,,
 "Hirtle, Kovner, Vickery and Bhanot",2016,"applied regression models to forecast six pre-
 provision net revenue categories: net interest income, noninterest nontrading income, trading 
 income, noninterest expense on compensation, noninterest expense on fixed assets, and other 
 noninterest expense.","Their specification used macroeconomic variables as independent variables 
-and highlighted that components of pre-provision net revenue are highly correlated over time",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,
+and highlighted that components of pre-provision net revenue are highly correlated over time",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,,
 Stiroh,2004,"finds a relatively weak relationship between business 
 cycles and aggregate net interest income and noninterest income, although noninterest income appears to be more 
 cyclical than net interest income.","In another study, Albertazzi and Gambacorta (2009) estimated equations for net 
 interest income, noninterest income, and operating expenses for an international sample of banks in industrialized 
-countries, assessing the relationship between macroeconomic variables and bank profits",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,
+countries, assessing the relationship between macroeconomic variables and bank profits",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,,
 "Hirtle, Kovner, Vickery and Bhanot",2016,"When 
 calculating projections for components of pre-provision net revenue, the projected component 
 ratios are multiplied by the corresponding scaling balances to arrive at projections in dollar 
 amounts.","Using a ratio instead of the gross dollar income or expense flow is a practical way to 
-account for differences in the size of banks in the sample",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,
+account for differences in the size of banks in the sample",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,,
 "Berger, Bonime, Covitz and Hancock",2000,"examine return on assets, return on equity, and revenues to costs ratios as measures of firm profitability and 
 find that the persistence of earnings in the banking industry increased into the late 1990s.","They note the amount of 
-persistence may be cyclical, decreasing in recessions and increasing in booms",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,
+persistence may be cyclical, decreasing in recessions and increasing in booms",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,,
 "Goddard, Liu, 
 Molyneux and Wilson",2011,"find evidence for persistence in return on equity but document lower rates of 
-persistence in more developed countries.",,proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,
+persistence in more developed countries.",,proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,,
 Flannery and James,1984,"Aharony, Saunders and Swary (1986), Saunders and 
 Yourougou (1990), and Yourougou (1990)).","English, Van den Heuvel and Zakrajsek (2018) identified a negative
 19 Model Documentation: Pre-Provision Net Revenue Model 
  
  
 relationships, the Board initially selects variables for each component based on well-established 
-economic relationships",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,
+economic relationships",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,,
 Demirguc-Kunt and Huizinga,1999,"found that net interest 
 margin is positively associated with bank characteristics such as the share of loans and deposits.","They also found 
 that net interest margin is related to real interest rates and inflation rates but could not confirm a relationship 
-between net interest margins and gross domestic product growth",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,
+between net interest margins and gross domestic product growth",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,,
 Flannery and James,1984,28 for example).,"The regression 
 model accounts for the relationship between previous performance of the dependent variable and 
-future outcomes by including a Year AR term",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,
+future outcomes by including a Year AR term",proposed_stress_test_model_documentation_pre_provision_net_revenue_models.pdf,Unknown,,,
 Lambie-Hanson,2016,"10 Proposed Changes to the Stress Test Modeling Framework 
  
  
 firm).","4  The Home Equity Model also includes losses attributable to accrued interest; it does not 
 include losses attributable to carrying costs, because the Board has assessed that the impact of 
-carrying costs on home equity exposures is immaterial",proposed_stress_test_model_documentation_proposed_model_changes_2025_to_2026.pdf,Unknown,,
+carrying costs on home equity exposures is immaterial",proposed_stress_test_model_documentation_proposed_model_changes_2025_to_2026.pdf,Unknown,,,
 Board,2025,"Federal Reserve Board requests comment on proposals to enhance the transparency and 
-public accountability of its annual stress test,",,scenario_data_and_model_documentation_gms_model_final.pdf,Federal_Reserve,,
+public accountability of its annual stress test,",,scenario_data_and_model_documentation_gms_model_final.pdf,Federal_Reserve,,,
 International Settlements,2019,"8 Exposures are taken from FR Y-14Q, schedule F.","10                                      Model Documentation: Overview of Scenario Design Process 
  
  
 between 60 and 120 business days, but the Board uses a horizon of three months for corporate 
-credit",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+credit",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Global Financial System,2005,"classifies stress scenarios 
 into historical and hypothetical scenarios, where the latter involves considerable judgment.","9  
-Aikman et al",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Aikman et al",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Alfaro and Drehmann,2009,"also emphasize the 
 role of expert insights in scenario design.","10 
 Expert judgment is based on a screening of emerging risks and current market conditions 
 identified from various sources including, but not limited to, financial stability reports from 
 government agencies, supervisory information, and internal and external assessments of potential 
-sources of distress, such as geopolitical, economic, and financial market events",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+sources of distress, such as geopolitical, economic, and financial market events",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Global Financial System,2005,": Stress Testing at Major Financial Institutions: Survey 
-Results and Practice.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Results and Practice.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Mencía, and 
 M. Summer",2012,": A Systematic Approach to Multi-Period Stress Testing of Portfolio Credit Risk, Journal of 
-Banking and Finance, 36(2), 332–340.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Banking and Finance, 36(2), 332–340.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "International 
 Settlements",2018,"judgment applied by the Board is subjected to rigorous review and validation 
 aimed at ensuring that the judgments are properly justified.","13  Shocks to key risk factors, which 
 include primary risk factors and potentially some secondary risk factors that are important for 
-describing the narrative, are benchmarked to historical shock distributions",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+describing the narrative, are benchmarked to historical shock distributions",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 International Settlements,2018,: Stress Testing Principles.,"17                                      Model Documentation: Detailed Modeling Approach 
  
  
 All scenarios, including their judgment-based adjustments, are subject to independent 
-quality assurance review",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+quality assurance review",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Abdymomunov, Duan, Hansen, and Misirli",2024,"the modeling approach links 
 these three sets of risk factors in two steps.","15  In the first step, the secondary risk factors are 
-modeled conditional on primary risk factors",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
-Diebold and Yilmaz,2009,show that U.,S,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+modeled conditional on primary risk factors",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
+Diebold and Yilmaz,2009,show that U.,S,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Beaudry and Portier,2006,"show 
 that public stock price movements along with total factor productivity shocks jointly explain 
 business cycle fluctuations; Jermann and Quadrini (2012) emphasize credit conditions as 
 important contributors to economic downturns; and Estrella and Hardouvelis (1991) show that 
-the term spread has predictive power for future real activity.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+the term spread has predictive power for future real activity.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Beaudry, P., and F. Portier",2006,": Stock 
-Prices, News, and Economic Fluctuations, American Economic Review, 96(4), 1293–1307.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
-Quadrini,2012,": Macroeconomic Effects of Financial Shocks, American Economic Review, 1, 238–271.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Prices, News, and Economic Fluctuations, American Economic Review, 96(4), 1293–1307.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
+Quadrini,2012,": Macroeconomic Effects of Financial Shocks, American Economic Review, 1, 238–271.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Estrella, 
 A., and G. Hardouvelis",1991,": The Term Structure as a Predictor of Real Economic Activity, Journal of Finance, 
-46(2), 555–576.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+46(2), 555–576.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Detailed Modeling Approach 
  
  
 Litterman and Scheinkman",1991,"17  Given these observations, the scenario design framework 
-employs the S&P 500 index return, Moody’s Baa-Aaa credit spread,18 the U.",S,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
-"Abdymomunov, Duan, Hansen, and Misirli",2024,the Board selects secondary risk factors from five broad asset classes.,,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+employs the S&P 500 index return, Moody’s Baa-Aaa credit spread,18 the U.",S,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
+"Abdymomunov, Duan, Hansen, and Misirli",2024,the Board selects secondary risk factors from five broad asset classes.,,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Orey,1987,"26 Since this is a fixed value, it does not have a subscript t.","26                                      Model Documentation: Detailed Modeling Approach 
  
  
 primary factor 𝒊  is less than the primary shock 85 percent (15 percent) of the time, then 𝝉 would 
 to a first approximation be 85 percent (15 percent), corresponding to an upper (lower) tail 
-quantile",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+quantile",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Guo, B., Han, Q., and Zhao, B.",2014,": The Nelson–Siegel Model of the Term Structure of Option Implied V olatility 
 and V olatility Components, Journal of Futures Markets, 34(8), 788-806.","32                                      Model Documentation: Detailed Modeling Approach 
  
  
-structure separately from their time-series dynamics",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+structure separately from their time-series dynamics",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Fan and Patton,2014,"34 
 Copula modeling offers several advantages over the quantile regression framework used 
 for modeling secondary risk factors, which are particularly important for the purpose of mapping 
 sets of secondary risk factor shocks into even larger sets of remaining risk factor shocks.","35  First, 
-it does not require that all marginal distributions be the same",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+it does not require that all marginal distributions be the same",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Nelson,1991,"or even a 
 different type of model altogether.","37  In contrast, traditional multivariate models often assume 
-that all variables follow the same type of distribution",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+that all variables follow the same type of distribution",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Patton,2006,"uses a GARCH-t (1,1) 
 specification when modeling the marginal distribution of the exchange rates.","41  Similarly, 
-Bartram et al",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Bartram et al",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Wang,2007,": The Euro and European Financial Market Dependence, 
-Journal of Banking and Finance 31(5), 1461–1481.","; Glosten, L",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Journal of Banking and Finance 31(5), 1461–1481.","; Glosten, L",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Jagannathan, and D. E. Runkle",1993,": On the
 35                                      Model Documentation: Detailed Modeling Approach 
  
  
 uses GARCH-t conditional volatility specifications as widely as possible when modeling the 
-marginal distributions of different risk factors in their respective asset classes.",The following describes the copula framework mathematically,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+marginal distributions of different risk factors in their respective asset classes.",The following describes the copula framework mathematically,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Fan and Patton,2014,for a detailed representation of the t-copulas).,"43  
 One of the benefits of working with a multivariate t-distribution is that its conditional 
-distributional properties are well established",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+distributional properties are well established",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Ding,2016,"shows that the conditional distribution of 
-𝑿𝟐 given 𝑿𝟏 is also a multivariate t-distribution.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+𝑿𝟐 given 𝑿𝟏 is also a multivariate t-distribution.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Ding,2016,"the distribution of 
 𝑿𝒕
 𝑹 = 𝑭𝝂
@@ -576,31 +576,31 @@ Equation C13 – Distribution of Conditional Multivariate Student’s t Distribu
 𝑹|𝑿𝒕
 𝑺~𝒕𝑵𝑹 (𝝁𝑹|𝑺,
 𝝂+𝒅𝑺
-𝝂+𝑵𝑺 𝚺𝑹,𝑹|𝑺, 𝝂 + 𝑵𝑺).",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+𝝂+𝑵𝑺 𝚺𝑹,𝑹|𝑺, 𝝂 + 𝑵𝑺).",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Ding,2016,"and requires the vector 
 of 𝑿𝒕
 𝑺 = 𝑭𝝂
 −𝟏(𝒖𝒕
-𝑺) and the correlation matrix 𝚺 as inputs.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+𝑺) and the correlation matrix 𝚺 as inputs.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Mashal, R.",2002,": Beyond 
-Correlation: Extreme Co-Movements Between Financial Assets.",SSRN Working Paper,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Correlation: Extreme Co-Movements Between Financial Assets.",SSRN Working Paper,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Demarta, S. and 
-McNeil, A. J.",2005,: The t Copula and Related Copulas.,"International Statistical Review, 73(1), 111-129",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+McNeil, A. J.",2005,: The t Copula and Related Copulas.,"International Statistical Review, 73(1), 111-129",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Demarta and McNeil,2005,this method does not guarantee that 𝚺 is positive definite.,"In practice, 
-the Board does not encounter issues with non-positive definite correlation matrices",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+the Board does not encounter issues with non-positive definite correlation matrices",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Diebold and 
 Li",2006,"for yield curves and Guo, Han, and Zhao (2014) for implied volatility curves.","51  Term 
 structures of risk factor shocks involve two dimensions: calendar time t and time of maturity T 
 (or, equivalently, a tenor given by T-t), which describes the maturity of a bond (for yield curves), 
-a futures contract (for futures curves), or an option (for implied volatility curves)",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+a futures contract (for futures curves), or an option (for implied volatility curves)",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Guo, B., Han, Q., and Zhao, B.",2014,": The Nelson–Siegel Model of the Term 
 Structure of Option Implied V olatility and V olatility Components, Journal of Futures Markets, 34(8), 788-806.","40                                      Model Documentation: Detailed Modeling Approach 
  
  
 where the level, slope, and curvature factors are obtained by regressing the data onto the factor 
-loadings given a 𝝀𝒊    value",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+loadings given a 𝝀𝒊    value",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Hentschel,1992,": No News is Good News: An Asymmetric Model of Changing 
-V olatility in Stock Returns, Journal of Financial Economics, 31(3), 281-318.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+V olatility in Stock Returns, Journal of Financial Economics, 31(3), 281-318.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Lo, and A.C. MacKinlay",1997,": “The Econometrics of Financial Markets,” Princeton 
 University Press.","49                                      Model Documentation: Detailed Modeling Approach 
  
@@ -609,55 +609,55 @@ Risk factor asset
 class Spot/futures curve shocks Option-implied volatility shocks 
 Level and slope factors follow univariate 
 EGARCH models described by 
-Equation C7 and C10",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Equation C7 and C10",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Diebold and Li,2006,"the Board uses the 
-Nelson-Siegel model to describe the term structures of government bond yields and swap rates.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Nelson-Siegel model to describe the term structures of government bond yields and swap rates.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Hentschel,1992,"58  The model is estimated only for 
 primary and secondary risk factors, because they have ample options data with various times-to-
 maturity and reflect the characteristics of major developed and emerging equity markets.","The 
 Nelson-Siegel model decay parameter for each market, 𝝀𝒊, is estimated using crisis-period59 data 
 only, as a full-sample estimation results in volatility curves with a slow decay for some markets, 
 with the implication that the long-tenor volatility shocks for these markets are too severe relative 
-to other markets",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
-"Stafford, E.",2009,Economic Catastrophe Bonds.,,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+to other markets",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
+"Stafford, E.",2009,Economic Catastrophe Bonds.,,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Schropp, H. J.",2009,Systematic Risk of CDOs and CDO Arbitrage.,"Deutsche 
-Bundesbank Discussion Paper Series 2",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Bundesbank Discussion Paper Series 2",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Engle,2002,"as a second multivariate
 65                                      Model Documentation: Detailed Modeling Approach 
  
  
 approach.","70  The DCC model is designed to capture time-varying correlations between multiple 
-time series",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+time series",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Engle, R.",2002,": Dynamic Conditional Correlation: A Simple Class of Multivariate Generalized Autoregressive 
-Conditional Heteroskedasticity Models.","Journal of Business & Economic Statistics, 20(3), 339 –350",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+Conditional Heteroskedasticity Models.","Journal of Business & Economic Statistics, 20(3), 339 –350",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 Orey,1987,"74  The 
 90th percentile is chosen to reflect the severity of the shock value for the Baa-Aaa spread change 
 used for the global market shock component of the 2025 severely adverse scenario, following the 
-procedure outlined in Section B.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+procedure outlined in Section B.",,scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 "Engle 
 and Mezrich",1996,"where the term 𝝎𝒊 is calculated as the unconditional sample variance multiplied by (𝟏 −
-𝝍𝒊 − 𝝓𝒊).","77  The data series are weekly spreads from January 1, 2005, to June 28, 2024",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+𝝍𝒊 − 𝝓𝒊).","77  The data series are weekly spreads from January 1, 2005, to June 28, 2024",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 MacQueen,1967,is applied for this purpose.,"82  This statistical method partitions observations into clusters to 
-minimize the within-cluster variances",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,
+minimize the within-cluster variances",scenario_data_and_model_documentation_gms_model_final.pdf,Unknown,,,
 International Settlements,2019,"7 Exposures are taken from FR Y-14Q, schedule F.","10                                      Model Documentation: Overview of Scenario Design Process 
  
  
 between 60 and 120 business days, but the Board uses a horizon of three months for corporate 
-credit",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+credit",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 Litterman and Scheinkman,1991,"16  Given these observations, the scenario design framework 
-employs the S&P 500 index return, Moody’s Baa-Aaa credit spread,17 the U.",S,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+employs the S&P 500 index return, Moody’s Baa-Aaa credit spread,17 the U.",S,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 Orey,1987,"25 Since this is a fixed value, it does not have a subscript t.","27                                      Model Documentation: Detailed Modeling Approach 
  
  
-the possible extreme values of the distribution",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+the possible extreme values of the distribution",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 Fan and Patton,2014,"33 
 Copula modeling offers several advantages over the quantile regression framework used 
 for modeling secondary risk factors, which are particularly important for the purpose of mapping 
 sets of secondary risk factor shocks into even larger sets of remaining risk factor shocks.","34  First, 
-it does not require that all marginal distributions be the same",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+it does not require that all marginal distributions be the same",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 "Jagannathan, and D. E. Runkle",1993,": On the 
 Relation between the Expected Value and the V olatility of the Nominal Excess Return on Stocks, The Journal of 
-Finance: 48(5), 1779–1801.",,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+Finance: 48(5), 1779–1801.",,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 Ding,2016,"the distribution of 
 𝑿𝑿𝒕𝒕
 𝑹𝑹= 𝑭𝑭𝝂𝝂
@@ -689,53 +689,53 @@ Equation C13 – Distribution of Conditional Multivariate Student’s t Distribu
 𝑹𝑹|𝑿𝑿𝒕𝒕
 𝑺𝑺~𝒕𝒕𝑵𝑵𝑹𝑹�𝝁𝝁𝑹𝑹|𝑺𝑺,
 𝝂𝝂+𝒅𝒅𝑺𝑺
-𝝂𝝂+𝑵𝑵𝑺𝑺𝚺𝚺𝑹𝑹,𝑹𝑹|𝑺𝑺, 𝝂𝝂+ 𝑵𝑵𝑺𝑺�.",,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+𝝂𝝂+𝑵𝑵𝑺𝑺𝚺𝚺𝑹𝑹,𝑹𝑹|𝑺𝑺, 𝝂𝝂+ 𝑵𝑵𝑺𝑺�.",,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 Ding,2016,"and requires the vector 
 of 𝑿𝑿𝒕𝒕
 𝑺𝑺= 𝑭𝑭𝝂𝝂
 −𝟏𝟏(𝒖𝒖𝒕𝒕
-𝑺𝑺) and the correlation matrix 𝚺𝚺 as inputs.",,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+𝑺𝑺) and the correlation matrix 𝚺𝚺 as inputs.",,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 Demarta and McNeil,2005,this method does not guarantee that 𝚺𝚺 is positive definite.,"In practice, 
-the Board does not encounter issues with non-positive definite correlation matrices",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+the Board does not encounter issues with non-positive definite correlation matrices",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 Hentschel,1992,"57  The model is estimated only for 
 primary and secondary risk factors, because they have ample options data with various times-to-
 maturity and reflect the characteristics of major developed and emerging equity markets.","The 
 Nelson-Siegel model decay parameter for each market, 𝝀𝝀𝒊𝒊, is estimated using crisis-period58 data 
 only, as a full-sample estimation results in volatility curves with a slow decay for some markets, 
 with the implication that the long-tenor volatility shocks for these markets are too severe relative 
-to other markets",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+to other markets",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 Engle,2002,"as a second multivariate 
 approach.","69  The DCC model is designed to capture time-varying correlations between multiple 
-time series",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+time series",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 Orey,1987,"73  The 
 90th percentile is chosen to reflect the severity of the shock value for the Baa-Aaa spread change 
 used for the global market shock component of the 2025 severely adverse scenario, following the 
-procedure outlined in Section B.",,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
+procedure outlined in Section B.",,scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
 "Engle 
 and Mezrich",1996,"where the term 𝝎𝝎𝒊𝒊 is calculated as the unconditional sample variance multiplied by (𝟏𝟏−
-𝝍𝝍𝒊𝒊− 𝝓𝝓𝒊𝒊).","76  The data series are weekly spreads from January 1, 2005, to June 28, 2024",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,
-"Bernanke, Ben",2016,What Tools Does the Fed Have Left? Part 1.  Negative Interest Rates.,"Brookings Institution, March 18; Fischer, Stanley (2016)",scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Federal_Reserve,,
+𝝍𝝍𝒊𝒊− 𝝓𝝓𝒊𝒊).","76  The data series are weekly spreads from January 1, 2005, to June 28, 2024",scenario_data_and_model_documentation_gms_model_proposed.pdf,Unknown,,,
+"Bernanke, Ben",2016,What Tools Does the Fed Have Left? Part 1.  Negative Interest Rates.,"Brookings Institution, March 18; Fischer, Stanley (2016)",scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Federal_Reserve,,,
 Okun,1962,"11 “Okun’s Law” has become a simple rule of thumb used by economic forecasters 
 to relate forecasts of real GDP to projections of the unemployment rate.","12  The Board is adopting 
 a “growth” version of the relationship—in contrast to a level specification13—both on the ground 
 that it reduces dependency on unobserved variables, such as the natural rate of unemployment, 
 and because it does a better job  accounting for the dynamics of output around the 2007-2009 
 financial crisis, given the evolution of the unemployment rate and reasonable assumptions about 
-the intercept term",scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Unknown,,
+the intercept term",scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Unknown,,,
 "Fischer, Stanley",2016,"Monetary Policy, Financial Stability, and the Zero Lower 
 Bound.","” Speech by Stanley Fischer Vice Chairman Board of Governors of the Federal Reserve System at the 
 Annual Meeting of the American Economic Association, San Francisco, California;  and interview “Powell says the 
 Federal Reserve is not considering negative interest rates” by Jeff Cox (CNBC) from May 13, 2020, available online 
-at this link: Powell says the Federal Reserve is not looking at negative interest rates ",scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Federal_Reserve,,
+at this link: Powell says the Federal Reserve is not looking at negative interest rates ",scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Federal_Reserve,,,
 Gürkaynak and Wright,2012,"38 Model Documentation: Term Premiums 
  
  
 Equation G4 – 10-year expectational component 
-𝑍𝑅𝐹𝐹10(𝑡) = (𝑅𝐹𝐹(𝑡) + 𝑅𝐹𝐹(𝑡 + 1) + .",,scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Unknown,,
-Bauer and Rudenbusch,2018,and Crump et al (2016).,"(Bauer, M",scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Unknown,,
+𝑍𝑅𝐹𝐹10(𝑡) = (𝑅𝐹𝐹(𝑡) + 𝑅𝐹𝐹(𝑡 + 1) + .",,scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Unknown,,,
+Bauer and Rudenbusch,2018,and Crump et al (2016).,"(Bauer, M",scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Unknown,,,
 "Adrian, Crump, and 
 Moench",2018,"made available by the Federal Reserve Bank of New York at 
-https://www.",,scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Federal_Reserve,,
+https://www.",,scenario_data_and_model_documentation_macroeconomic_model_guide_final.pdf,Federal_Reserve,,,
 Gürkaynak and Wright,2012,"The 
 corresponding equations are: 
 Equation G1 – 5-year Treasury yield 
@@ -744,15 +744,15 @@ Equation G2 – 10-year Treasury yield
 𝑈𝑈𝐻𝐻10(𝑡𝑡) = 𝑍𝑍𝑈𝑈𝑃𝑃𝑃𝑃10(𝑡𝑡) + 𝑈𝑈𝐻𝐻10𝐻𝐻(𝑡𝑡).","The expectational components are equal to the average of the quarterly short-term interest 
 rates over the horizon corresponding to the maturity of the bond: 
 Equation G3 – 5-year expectational component  
-𝑍𝑍𝑈𝑈𝑃𝑃𝑃𝑃5(𝑡𝑡) = (𝑈𝑈𝑃𝑃𝑃𝑃(𝑡𝑡) + 𝑈𝑈𝑃𝑃𝑃𝑃(𝑡𝑡+ 1) + ",scenario_data_and_model_documentation_macroeconomic_model_guide_proposed.pdf,Unknown,,
-Bauer and Rudenbusch,2018,and Crump et all (2016).,"(Bauer, M",scenario_data_and_model_documentation_macroeconomic_model_guide_proposed.pdf,Unknown,,
+𝑍𝑍𝑈𝑈𝑃𝑃𝑃𝑃5(𝑡𝑡) = (𝑈𝑈𝑃𝑃𝑃𝑃(𝑡𝑡) + 𝑈𝑈𝑃𝑃𝑃𝑃(𝑡𝑡+ 1) + ",scenario_data_and_model_documentation_macroeconomic_model_guide_proposed.pdf,Unknown,,,
+Bauer and Rudenbusch,2018,and Crump et all (2016).,"(Bauer, M",scenario_data_and_model_documentation_macroeconomic_model_guide_proposed.pdf,Unknown,,,
 Krishnamurthy,2025,"documents rapid changes in spreads at the onset of financial crises, whereas Bernanke (2005) 
 classify spreads and stock market prices as “fast-moving” variables that respond to shocks on 
-impact.",A,scenarios_2026_scenario_review_of_comments.pdf,Unknown,,
-Krishnamurthy,2025,); B.,,scenarios_2026_scenario_review_of_comments.pdf,Unknown,,
+impact.",A,scenarios_2026_scenario_review_of_comments.pdf,Unknown,,,
+Krishnamurthy,2025,); B.,,scenarios_2026_scenario_review_of_comments.pdf,Unknown,,,
 Caldara,2016,"supra note 182, provides empirical evidence of such 
-behavior of spreads in response to financial shocks and uncertainty shocks.","30  See supra note 2, at 51917",scenarios_2026_scenario_review_of_comments.pdf,Unknown,,
+behavior of spreads in response to financial shocks and uncertainty shocks.","30  See supra note 2, at 51917",scenarios_2026_scenario_review_of_comments.pdf,Unknown,,,
 Postwar U.S. Experience,1994,"32  The final path for the BBB spread is also consistent with the guide described in the proposed 
 2025 Scenario Design Policy Statement.","In the proposed BBB spreads guide, BBB spreads 
 would increase 100 basis points or to a range between 500 and 600 basis points, whichever is 
-higher",scenarios_2026_scenario_review_of_comments.pdf,Unknown,,
+higher",scenarios_2026_scenario_review_of_comments.pdf,Unknown,,,
