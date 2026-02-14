@@ -10,6 +10,7 @@ import logging
 import sys
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from src.config import CFG
 from src.embedding.model import embed_and_store
 from src.ingestion.downloader import download_files
 from src.ingestion.loaders import load_directory, LOADER_MAP
@@ -20,9 +21,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Chunking defaults
-DEFAULT_CHUNK_SIZE_IN_CHARS = 1000  # 1,000 chars equates to 200-300 words
-DEFAULT_CHUNK_OVERLAP_IN_CHARS = 100
+# Chunking defaults (driven by config.txt)
+DEFAULT_CHUNK_SIZE_IN_CHARS = int(CFG["chunk_size"])
+DEFAULT_CHUNK_OVERLAP_IN_CHARS = int(CFG["chunk_overlap"])
 
 
 def chunk_documents(
@@ -95,8 +96,8 @@ def run(
     # Step 2: Chunk
     chunks = chunk_documents(docs, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
-    # Step 3: Embed and store
-    embed_and_store(chunks)
+    # Step 3: Embed and store (collection driven by config.txt)
+    embed_and_store(chunks, collection_name=str(CFG["collection_name"]))
 
     return chunks
 

@@ -61,7 +61,7 @@ graph LR
         end
 
         subgraph Load
-            CHROMA[("ChromaDB<br/>corpus/vector_db/<br/>collection: stress_test_docs")]
+            CHROMA[("ChromaDB<br/>corpus/vector_db/<br/>collection: stress_test_docs_1k | _6k")]
         end
 
         LOAD --> CHUNK --> EMBED --> CHROMA
@@ -115,7 +115,7 @@ sequenceDiagram
     participant CHUNK as processor.py<br/>chunk_documents()
     participant EMB as model.py<br/>embed_and_store()
     participant HF as HuggingFaceEmbeddings<br/>all-MiniLM-L6-v2
-    participant CHROMA as 🛢 ChromaDB<br/>stress_test_docs
+    participant CHROMA as 🛢 ChromaDB<br/>stress_test_docs_*
     participant QUERY as query.py<br/>retrieve()
     participant LLM as llm.py<br/>ask()
     participant OLLAMA as ChatOllama<br/>llama3.2:3b
@@ -467,7 +467,7 @@ ChromaDB's underlying SQLite backend limits the number of parameters per stateme
 #### ChromaDB Configuration
 
 - **Mode**: Embedded/in-process via `chromadb.PersistentClient(path="corpus/vector_db/")`.
-- **Collection**: `"stress_test_docs"`, created via `get_or_create_collection()`.
+- **Collection**: Driven by `config.txt` (default `"stress_test_docs_1k"`), created via `get_or_create_collection()`.
 - **Index**: HNSW (ChromaDB default) for approximate nearest neighbor search.
 - `corpus/vector_db/` is gitignored.
 
@@ -485,7 +485,7 @@ Step 3: embed_and_store(chunks) → int (count upserted) (model.py)
 | -------- | ----- |
 | `MODEL_NAME` | `"all-MiniLM-L6-v2"` |
 | `VECTOR_DB_DIR` | `"corpus/vector_db"` |
-| `COLLECTION_NAME` | `"stress_test_docs"` |
+| `COLLECTION_NAME` | from `config.txt` (default `"stress_test_docs_1k"`) |
 | `METADATA_CSV` | `"corpus/metadata.csv"` |
 | `DEFAULT_BATCH_SIZE` | `500` |
 

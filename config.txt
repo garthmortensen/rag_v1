@@ -1,0 +1,16 @@
+# ── RAG pipeline configuration ──────────────────────────────────────
+# Simple key = value pairs.  Blank lines and lines starting with #
+# are ignored.
+#
+# To keep your old 1k-chunk embeddings AND add a new 6k set:
+#   1. Change chunk_size and collection_name below.
+#   2. Re-run the ingestion pipeline (python -m src.ingestion.processor).
+#   3. Queries will automatically use the collection_name set here.
+#
+# Switch back to the original embeddings at any time by changing
+# collection_name back to "stress_test_docs_1k" (no re-embedding needed).
+# ────────────────────────────────────────────────────────────────────
+
+chunk_size       = 6000
+chunk_overlap    = 200
+collection_name  = stress_test_docs_6k

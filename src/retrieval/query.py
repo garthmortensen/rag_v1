@@ -24,12 +24,15 @@ import textwrap
 from rich.console import Console
 from rich.panel import Panel
 
+from src.config import CFG
 from src.embedding.model import (
     get_embedding_function,
     get_or_create_collection,
-    COLLECTION_NAME,
     VECTOR_DB_DIR,
 )
+
+# Derive from config so queries hit the same collection that was ingested
+COLLECTION_NAME = str(CFG["collection_name"])
 
 logger = logging.getLogger(__name__)
 

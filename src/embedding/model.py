@@ -17,6 +17,7 @@ import os
 import chromadb
 from langchain_huggingface import HuggingFaceEmbeddings
 
+from src.config import CFG
 from src.utils import select_best_model
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 # ── Defaults ────────────────────────────────────────────────────────
 MODEL_NAME = "all-MiniLM-L6-v2"
 VECTOR_DB_DIR = os.path.join("corpus", "vector_db")
-COLLECTION_NAME = "stress_test_docs"
+COLLECTION_NAME = str(CFG["collection_name"])
 METADATA_CSV = os.path.join("corpus", "metadata.csv")
 DEFAULT_BATCH_SIZE = 500
 
