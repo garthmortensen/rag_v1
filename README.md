@@ -143,9 +143,7 @@ rag_stress_testing/
 │   ├── test_generation.py
 │   └── test_utils.py
 ├── docs/
-│   ├── ADR.md                 # Architecture Decision Records
-│   ├── architecture.md        # Pipeline & dependency diagrams
-│   └── phase_2.md             # Phase 2 design doc
+│   └── architecture.md        # ADRs, pipeline diagrams, design details
 ├── pyproject.toml
 ├── CHANGELOG.md
 └── README.md
@@ -233,26 +231,17 @@ rag_stress_testing/
 ## Visuals of Chromadb
 
 ```text
-    ┌─────────────────────────────────┐
-    │       •credit_risk              │
-    │      • •Basel_III               │
-    │     •                           │
-    │                    ◆ QUERY      │
-    │              •stress_test       │
-    │             • •CCAR             │
-    │            •                    │
-    │  •market_risk                   │
-    │ • •VaR                          │
-    └─────────────────────────────────┘
-    Cosine similarity → spatial proximity
-```
-
-```text
-         ╭─── 0.95 ───╮
-       ╭─│── 0.87 ──│─╮
-     ╭─│─│── 0.74 ─│─│─╮
-     │ │ │  ◆ QUERY │ │ │
-     ╰─│─│─────────│─│─╯
-       ╰─│─────────│─╯
-         ╰─────────╯
+         ╭─── 0.95 ─────────────────────────╮
+       ╭─│── 0.87 ────────────────────────│─╮
+     ╭─│─│── 0.74 ─────────────────────│─│─╮
+     │ │ │                              │ │ │
+     │ │ │  •stress_test    ◆ QUERY     │ │ │
+     │ │ │   •CCAR                      │ │ │
+     │ │ │              •credit_risk    │ │ │
+     │ │ •Basel_III      •market_risk   │ │ │
+     │ •VaR                             │ │ │
+     ╰─│─│─────────────────────────│─│─╯ │ │
+       ╰─│─────────────────────────│─╯   │ │
+         ╰───────────────────────────────╯ │
+           Cosine similarity → spatial proximity
 ```
