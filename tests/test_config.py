@@ -113,6 +113,25 @@ class TestLoadConfigParsing(unittest.TestCase):
         cfg = load_config("/nonexistent/config.txt")
         self.assertIs(cfg["beep_on_answer"], True)
 
+    def test_default_llm_provider(self):
+        """llm_provider should default to 'ollama' when not in config file."""
+        cfg = load_config("/nonexistent/config.txt")
+        self.assertEqual(cfg["llm_provider"], "ollama")
+
+    def test_default_llm_model(self):
+        """llm_model should default to 'llama3.2:3b' when not in config file."""
+        cfg = load_config("/nonexistent/config.txt")
+        self.assertEqual(cfg["llm_model"], "llama3.2:3b")
+
+    def test_custom_llm_provider_and_model(self):
+        """llm_provider and llm_model can be overridden in the config file."""
+        path = self._write_temp(
+            "llm_provider = groq\nllm_model = llama-3.3-70b-versatile\n"
+        )
+        cfg = load_config(path)
+        self.assertEqual(cfg["llm_provider"], "groq")
+        self.assertEqual(cfg["llm_model"], "llama-3.3-70b-versatile")
+
 
 if __name__ == "__main__":
     unittest.main()

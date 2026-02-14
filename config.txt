@@ -15,3 +15,9 @@ chunk_size       = 10000
 chunk_overlap    = 200
 collection_name  = stress_test_docs_10k
 beep_on_answer   = true
+
+# ── LLM provider ───────────────────────────────────────────────────
+# Supported: ollama, openai, anthropic, groq, google
+# API keys are read from .env (see .env.example).
+llm_provider     = ollama
+llm_model        = llama3.2:3b

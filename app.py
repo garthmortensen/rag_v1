@@ -22,7 +22,13 @@ st.set_page_config(
 
 from src.config import CFG, config_as_text
 from src.embedding.model import VECTOR_DB_DIR, COLLECTION_NAME
-from src.generation.llm import generate_answer, DEFAULT_MODEL, DEFAULT_TEMPERATURE
+from src.generation.llm import (
+    generate_answer,
+    DEFAULT_MODEL,
+    DEFAULT_PROVIDER,
+    DEFAULT_TEMPERATURE,
+    PROVIDER_DEFAULTS,
+)
 from src.retrieval.query import retrieve_formatted
 from src.retrieval.query_logger import log_query_session
 
@@ -118,7 +124,23 @@ with st.sidebar:
 
     # LLM settings
     st.subheader("🤖 Generation")
-    model = st.text_input("Ollama model", value=DEFAULT_MODEL)
+    provider_list = list(PROVIDER_DEFAULTS.keys())
+    default_provider_idx = (
+        provider_list.index(DEFAULT_PROVIDER)
+        if DEFAULT_PROVIDER in provider_list
+        else 0
+    )
+    provider = st.selectbox(
+        "LLM Provider", provider_list, index=default_provider_idx
+    )
+    model = st.text_input(
+        "Model",
+        value=(
+            DEFAULT_MODEL
+            if provider == DEFAULT_PROVIDER
+            else PROVIDER_DEFAULTS.get(provider, "")
+        ),
+    )
     temperature = st.slider(
         "Temperature",
         min_value=0.0,
@@ -131,6 +153,7 @@ with st.sidebar:
 st.title("🏦 RAG Stress Testing")
 st.caption(
     f"Collection: **{selected_collection}** · "
+    f"Provider: **{provider}** · "
     f"Model: **{model}** · "
     f"Top-K: **{top_k}**"
 )
@@ -138,6 +161,13 @@ st.caption(
 # Chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+
+# ── Copy helper ─────────────────────────────────────────────────────
+
+def _format_qa(question: str, answer: str) -> str:
+    """Format a Q&A exchange as plain text for clipboard copying."""
+    return f"Q: {question}\n\nA: {answer}"
 
 
 # ── Chunk renderer ──────────────────────────────────────────────────
@@ -179,6 +209,10 @@ for msg in st.session_state.messages:
                 for chunk in msg["sources"]:
                     _render_chunk(chunk)
         st.markdown(msg["content"])
+        # Copy Q&A button for assistant messages
+        if msg["role"] == "assistant" and "query" in msg:
+            qa_text = _format_qa(msg["query"], msg["content"])
+            st.code(qa_text, language="text")
 
 
 # ── Chat input ──────────────────────────────────────────────────────
@@ -248,7 +282,8 @@ if query:
         def _generate():
             try:
                 result["answer"] = generate_answer(
-                    query, chunks, model=model, temperature=temperature
+                    query, chunks, model=model, temperature=temperature,
+                    provider=provider,
                 )
             except Exception as exc:
                 result["error"] = exc
@@ -275,14 +310,9 @@ if query:
         if result["error"] is not None:
             exc = result["error"]
             if isinstance(exc, ConnectionError):
-                st.error(
-                    "Could not reach the Ollama server at localhost:11434.\n\n"
-                    "Make sure Ollama is running:\n"
-                    "```\n"
-                    "ollama serve\n"
-                    "ollama pull llama3.2:3b\n"
-                    "```"
-                )
+                st.error(str(exc))
+            elif isinstance(exc, ImportError):
+                st.error(str(exc))
             else:
                 st.error(f"Generation failed: {exc}")
             st.stop()
@@ -298,11 +328,16 @@ if query:
         )
         st.markdown(answer)
 
+    # Copy Q&A to clipboard
+    qa_text = _format_qa(query, answer)
+    st.code(qa_text, language="text")
+
     # Save assistant message with sources for history
     st.session_state.messages.append(
         {
             "role": "assistant",
             "content": answer,
+            "query": query,
             "sources": chunks,
             "timestamp": response_time,
             "delta": delta_str,

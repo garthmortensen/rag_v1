@@ -1,3 +1,11 @@
+## 0.9.0 (2026-02-14)
+
+### Feat
+
+- **ui**: add streamlit ui, citations parser and support for multiple collections
+- **multiple**: add logs, improve printouts, add db inspection, add beep, add configuration to printout
+- **config**: implement config driven approach to allow for multiple chromadb collections, separated by embedding length (1k, 2k, ..., nk)
+
 ## 0.8.0 (2026-02-13)
 
 ### Feat

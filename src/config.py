@@ -18,10 +18,14 @@ the pipeline still works.
 import logging
 import os
 
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.table import Table
 
 logger = logging.getLogger(__name__)
+
+# ── Load .env (API keys, OLLAMA_HOST, etc.) ─────────────────────────
+load_dotenv()  # reads .env from project root, if present
 
 _console = Console()
 
@@ -31,6 +35,8 @@ DEFAULTS: dict[str, str | int | bool] = {
     "chunk_overlap": 100,
     "collection_name": "stress_test_docs_1k",
     "beep_on_answer": True,
+    "llm_provider": "ollama",
+    "llm_model": "llama3.2:3b",
 }
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), os.pardir, "config.txt")

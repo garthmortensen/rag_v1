@@ -13,7 +13,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from src.config import CFG
 from src.embedding.model import embed_and_store
-from src.ingestion.downloader import download_files
+from src.ingestion.downloader import download_files, download_citations
 from src.ingestion.loaders import load_directory, LOADER_MAP
 
 logging.basicConfig(
@@ -68,6 +68,7 @@ def run(
 
     # Step 0: Download
     download_files()
+    download_citations()
 
     # Step 1: Load
     docs = load_directory()

@@ -1,18 +1,19 @@
 """LLM-powered answer generation over retrieved document chunks.
 
-Uses a local Ollama model (via langchain-ollama) to produce
-grounded answers from the top-k chunks returned by the retrieval
-module.  The prompt instructs the model to cite sources and
-acknowledge uncertainty.
+Uses a configurable LLM provider to produce grounded answers from
+the top-k chunks returned by the retrieval module.  The prompt
+instructs the model to cite sources and acknowledge uncertainty.
 
-Prerequisites
--------------
-1. Install the Ollama runtime:
-       curl -fsSL https://ollama.com/install.sh | sh
-2. Pull a model:
-       ollama pull llama3.2:3b
-3. Ensure the Ollama server is running:
-       ollama serve          # or it may auto-start as a systemd service
+Supported providers (set ``llm_provider`` in config.txt):
+
+* **ollama** — local Ollama server (default, no API key needed)
+* **openai** — OpenAI API (requires ``OPENAI_API_KEY`` in .env)
+* **anthropic** — Anthropic API (requires ``ANTHROPIC_API_KEY``)
+* **groq** — Groq API (requires ``GROQ_API_KEY``, free tier available)
+* **google** — Google Gemini API (requires ``GOOGLE_API_KEY``)
+
+API keys are loaded from a ``.env`` file at the project root via
+python-dotenv (see ``.env.example``).
 
 Usage (programmatic):
     from src.generation.llm import ask
@@ -24,12 +25,24 @@ import textwrap
 
 from langchain_ollama import ChatOllama
 
+from src.config import CFG
+
 logger = logging.getLogger(__name__)
 
-# ── Defaults ────────────────────────────────────────────────────────
-DEFAULT_MODEL = "llama3.2:3b"
+# ── Defaults (read from config.txt, fall back to built-in) ──────────
+DEFAULT_PROVIDER: str = str(CFG.get("llm_provider", "ollama"))
+DEFAULT_MODEL: str = str(CFG.get("llm_model", "llama3.2:3b"))
 DEFAULT_TEMPERATURE = 0.1
 DEFAULT_TOP_K = 5
+
+# ── Provider → default model mapping ───────────────────────────────
+PROVIDER_DEFAULTS: dict[str, str] = {
+    "ollama": "llama3.2:3b",
+    "openai": "gpt-4o-mini",
+    "anthropic": "claude-sonnet-4-20250514",
+    "groq": "llama-3.3-70b-versatile",
+    "google": "gemini-2.0-flash",
+}
 
 # ── System prompt ───────────────────────────────────────────────────
 SYSTEM_PROMPT = textwrap.dedent("""\
@@ -88,23 +101,84 @@ def build_prompt(query: str, chunks: list[dict]) -> str:
 def get_llm(
     model: str = DEFAULT_MODEL,
     temperature: float = DEFAULT_TEMPERATURE,
-) -> ChatOllama:
-    """Create a ChatOllama instance.
+    provider: str = DEFAULT_PROVIDER,
+):
+    """Create a LangChain chat model for the given provider.
 
     Parameters
     ----------
     model : str
-        Ollama model tag (e.g. ``"llama3.2:3b"``).
+        Model name/tag for the chosen provider.
     temperature : float
         Sampling temperature (lower = more deterministic).
+    provider : str
+        One of ``"ollama"``, ``"openai"``, ``"anthropic"``,
+        ``"groq"``, ``"google"``.
 
     Returns
     -------
-    ChatOllama
-        A LangChain chat model backed by Ollama.
+    BaseChatModel
+        A LangChain chat model instance.
+
+    Raises
+    ------
+    ValueError
+        If *provider* is not recognised.
+    ImportError
+        If the required provider package is not installed.
     """
-    logger.info(f"Initialising Ollama LLM: model={model}, temp={temperature}")
-    return ChatOllama(model=model, temperature=temperature)
+    provider = provider.lower().strip()
+    logger.info(
+        f"Initialising LLM: provider={provider}, model={model}, temp={temperature}"
+    )
+
+    if provider == "ollama":
+        return ChatOllama(model=model, temperature=temperature)
+
+    if provider == "openai":
+        try:
+            from langchain_openai import ChatOpenAI
+        except ImportError:
+            raise ImportError(
+                "langchain-openai is required for the openai provider.\n"
+                "  Run: uv add langchain-openai"
+            )
+        return ChatOpenAI(model=model, temperature=temperature)
+
+    if provider == "anthropic":
+        try:
+            from langchain_anthropic import ChatAnthropic
+        except ImportError:
+            raise ImportError(
+                "langchain-anthropic is required for the anthropic provider.\n"
+                "  Run: uv add langchain-anthropic"
+            )
+        return ChatAnthropic(model=model, temperature=temperature)
+
+    if provider == "groq":
+        try:
+            from langchain_groq import ChatGroq
+        except ImportError:
+            raise ImportError(
+                "langchain-groq is required for the groq provider.\n"
+                "  Run: uv add langchain-groq"
+            )
+        return ChatGroq(model=model, temperature=temperature)
+
+    if provider == "google":
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+        except ImportError:
+            raise ImportError(
+                "langchain-google-genai is required for the google provider.\n"
+                "  Run: uv add langchain-google-genai"
+            )
+        return ChatGoogleGenerativeAI(model=model, temperature=temperature)
+
+    raise ValueError(
+        f"Unknown llm_provider '{provider}'. "
+        f"Supported: {', '.join(PROVIDER_DEFAULTS)}"
+    )
 
 
 def generate_answer(
@@ -112,8 +186,9 @@ def generate_answer(
     chunks: list[dict],
     model: str = DEFAULT_MODEL,
     temperature: float = DEFAULT_TEMPERATURE,
+    provider: str = DEFAULT_PROVIDER,
 ) -> str:
-    """Send a RAG prompt to the local Ollama model and return the answer.
+    """Send a RAG prompt to the configured LLM and return the answer.
 
     Parameters
     ----------
@@ -122,9 +197,11 @@ def generate_answer(
     chunks : list[dict]
         Retrieved document chunks (from ``retrieve_formatted()``).
     model : str
-        Ollama model tag.
+        Model name/tag for the chosen provider.
     temperature : float
         Sampling temperature.
+    provider : str
+        LLM provider name (ollama, openai, anthropic, groq, google).
 
     Returns
     -------
@@ -137,10 +214,10 @@ def generate_answer(
         If the Ollama server is not reachable.
     """
     prompt = build_prompt(query, chunks)
-    llm = get_llm(model=model, temperature=temperature)
+    llm = get_llm(model=model, temperature=temperature, provider=provider)
 
     logger.info(
-        f"Generating answer  (model={model}, "
+        f"Generating answer  (provider={provider}, model={model}, "
         f"chunks={len(chunks)}, query='{query[:60]}')"
     )
 
@@ -152,15 +229,19 @@ def generate_answer(
         response = llm.invoke(messages)
         answer = response.content
     except Exception as exc:
-        # Surface a clear message when Ollama isn't running
+        # Surface a clear message when a local Ollama isn't running
         exc_str = str(exc).lower()
         if "connection" in exc_str or "refused" in exc_str:
             raise ConnectionError(
-                "Could not reach the Ollama server at localhost:11434.\n"
-                "Make sure Ollama is installed and running:\n"
-                "  1. curl -fsSL https://ollama.com/install.sh | sh\n"
-                "  2. ollama pull llama3.2:3b\n"
-                "  3. ollama serve"
+                f"Could not reach the LLM server (provider={provider}).\n"
+                + (
+                    "Make sure Ollama is installed and running:\n"
+                    "  1. curl -fsSL https://ollama.com/install.sh | sh\n"
+                    "  2. ollama pull llama3.2:3b\n"
+                    "  3. ollama serve"
+                    if provider == "ollama"
+                    else f"Check your API key and network for provider '{provider}'."
+                )
             ) from exc
         raise
 
@@ -176,6 +257,7 @@ def ask(
     where: dict | None = None,
     model: str = DEFAULT_MODEL,
     temperature: float = DEFAULT_TEMPERATURE,
+    provider: str = DEFAULT_PROVIDER,
     persist_dir: str | None = None,
     collection_name: str | None = None,
 ) -> dict:
@@ -193,9 +275,11 @@ def ask(
     where : dict | None
         Optional ChromaDB metadata filter.
     model : str
-        Ollama model tag.
+        Model name/tag for the chosen provider.
     temperature : float
         Sampling temperature.
+    provider : str
+        LLM provider name (ollama, openai, anthropic, groq, google).
     persist_dir : str | None
         ChromaDB directory (uses default if None).
     collection_name : str | None
@@ -204,7 +288,8 @@ def ask(
     Returns
     -------
     dict
-        ``{"query": ..., "answer": ..., "chunks": ..., "model": ...}``
+        ``{"query": ..., "answer": ..., "chunks": ..., "model": ...,
+        "provider": ...}``
     """
     # Lazy import to avoid circular deps and keep retrieval usable
     # without generation deps installed
@@ -228,6 +313,7 @@ def ask(
         chunks,
         model=model,
         temperature=temperature,
+        provider=provider,
     )
 
     return {
@@ -235,4 +321,5 @@ def ask(
         "answer": answer,
         "chunks": chunks,
         "model": model,
+        "provider": provider,
     }

@@ -12,7 +12,7 @@ rag_stress_testing_v1/
 ├── src/
 │   ├── utils.py               # RAM-aware embedding model selection
 │   ├── ingestion/
-│   │   ├── downloader.py      # Phase 1: download files from data_sources.csv
+│   │   ├── downloader.py      # download files from data_sources.csv
 │   │   ├── loaders.py         # Extract: LangChain Community document loaders
 │   │   └── processor.py       # Pipeline orchestrator (load → chunk → embed → store)
 │   ├── embedding/
@@ -88,13 +88,13 @@ graph LR
     CHROMA --> ANN
     ANN --> PROMPT
 
-    style Phase1 fill:#1a1a2e,stroke:#555,color:#fff
-    style Phase2 fill:#16213e,stroke:#555,color:#fff
-    style Phase3 fill:#1e3a2e,stroke:#555,color:#fff
-    style Phase4 fill:#2e1a3a,stroke:#555,color:#fff
-    style Extract fill:#1a3a5c,stroke:#4a9eed,color:#fff
-    style Transform fill:#1a4a3a,stroke:#4aed9e,color:#fff
-    style Load fill:#4a1a3a,stroke:#ed4a9e,color:#fff
+    style Phase1 fill:none,stroke:#555
+    style Phase2 fill:none,stroke:#555
+    style Phase3 fill:none,stroke:#555
+    style Phase4 fill:none,stroke:#555
+    style Extract fill:none,stroke:#4a9eed
+    style Transform fill:none,stroke:#4aed9e
+    style Load fill:none,stroke:#ed4a9e
 ```
 
 ---
@@ -120,7 +120,7 @@ sequenceDiagram
     participant LLM as llm.py<br/>ask()
     participant OLLAMA as ChatOllama<br/>llama3.2:3b
 
-    rect rgb(200, 200, 230)
+    rect rgba(0, 0, 0, 0)
         Note over DL,FS: Phase 1 — Acquire
         User ->> PROC: run()
         PROC ->> DL: download_files()
@@ -134,7 +134,7 @@ sequenceDiagram
         DL -->> PROC: download complete
     end
 
-    rect rgb(190, 210, 240)
+    rect rgba(0, 0, 0, 0)
         Note over LOAD,CHROMA: Phase 2 — Ingest & Index
         PROC ->> LOAD: load_directory("corpus/raw_data/")
         loop Each supported file (LOADER_MAP)
@@ -163,7 +163,7 @@ sequenceDiagram
         EMB -->> PROC: int (count upserted)
     end
 
-    rect rgb(195, 230, 210)
+    rect rgba(0, 0, 0, 0)
         Note over QUERY,CHROMA: Phase 3 — Retrieve
         User ->> QUERY: retrieve("What is the peak unemployment rate?")
         QUERY ->> HF: embed_query(query)
@@ -174,7 +174,7 @@ sequenceDiagram
         QUERY -->> User: top-k ranked chunks
     end
 
-    rect rgb(220, 200, 235)
+    rect rgba(0, 0, 0, 0)
         Note over LLM,OLLAMA: Phase 4 — Generate
         User ->> LLM: ask("What is the peak unemployment rate?")
         LLM ->> QUERY: retrieve_formatted(query, n_results=k)
@@ -211,7 +211,7 @@ sequenceDiagram
     Note over User,CLI: User runs: python -m src.retrieval.query "question" --answer
 
     %% ── Startup ──
-    rect rgb(220, 215, 245)
+    rect rgba(0, 0, 0, 0)
         Note over CLI,CFG: Startup
         CLI ->> CLI: print_ascii_banner()
         CLI ->> CFG: read collection_name,<br/>beep_on_answer, …
@@ -225,7 +225,7 @@ sequenceDiagram
     end
 
     %% ── Retrieval ──
-    rect rgb(195, 230, 210)
+    rect rgba(0, 0, 0, 0)
         Note over RET,CHROMA: Retrieval — semantic search
         CLI ->> RET: retrieve_formatted(query, n_results=k, where=filter)
         RET ->> HF: embed_query(query)
@@ -241,7 +241,7 @@ sequenceDiagram
     CLI ->> CLI: _print_results(chunks)<br/>display ranked chunks to terminal
 
     %% ── Generation ──
-    rect rgb(220, 200, 235)
+    rect rgba(0, 0, 0, 0)
         Note over GEN,OLLAMA: Generation — LLM grounded answer
         CLI ->> GEN: _generate_and_print_answer(query, chunks, model)
         GEN ->> LLM: generate_answer(query, chunks)
@@ -269,7 +269,7 @@ sequenceDiagram
     end
 
     %% ── Logging ──
-    rect rgb(230, 225, 200)
+    rect rgba(0, 0, 0, 0)
         Note over LOG: Session logging
         CLI ->> LOG: log_query_session(<br/>  query, results,<br/>  answer, collection_name<br/>)
         LOG ->> LOG: write logs/YYYYMMDD_HHMMSS.log<br/>CONFIG + query + chunks + answer
@@ -342,12 +342,12 @@ graph TD
     ENRICH --> UPSERT
     UPSERT --> DB
 
-    style Input fill:#2d2d2d,stroke:#555,color:#fff
-    style Loaders fill:#1a3a5c,stroke:#4a9eed,color:#fff
-    style Documents fill:#2a2a4a,stroke:#888,color:#fff
-    style Chunking fill:#1a4a3a,stroke:#4aed9e,color:#fff
-    style Embedding fill:#3a3a1a,stroke:#edd74a,color:#fff
-    style Storage fill:#4a1a3a,stroke:#ed4a9e,color:#fff
+    style Input fill:none,stroke:#555
+    style Loaders fill:none,stroke:#4a9eed
+    style Documents fill:none,stroke:#888
+    style Chunking fill:none,stroke:#4aed9e
+    style Embedding fill:none,stroke:#edd74a
+    style Storage fill:none,stroke:#ed4a9e
 ```
 
 ---
@@ -381,12 +381,12 @@ graph BT
     DL --> META_CSV["corpus/metadata.csv"]
     MODEL --> META_CSV
 
-    style PROC fill:#1a4a3a,stroke:#4aed9e,color:#fff
-    style LOAD fill:#1a3a5c,stroke:#4a9eed,color:#fff
-    style MODEL fill:#3a3a1a,stroke:#edd74a,color:#fff
-    style DL fill:#2d2d2d,stroke:#888,color:#fff
-    style QUERY fill:#1e3a2e,stroke:#4aed9e,color:#fff
-    style GEN fill:#2e1a3a,stroke:#ed4aed,color:#fff
+    style PROC fill:none,stroke:#4aed9e
+    style LOAD fill:none,stroke:#4a9eed
+    style MODEL fill:none,stroke:#edd74a
+    style DL fill:none,stroke:#888
+    style QUERY fill:none,stroke:#4aed9e
+    style GEN fill:none,stroke:#ed4aed
 ```
 
 ---

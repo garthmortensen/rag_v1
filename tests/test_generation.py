@@ -21,8 +21,10 @@ from src.generation.llm import (
     ask,
     SYSTEM_PROMPT,
     DEFAULT_MODEL,
+    DEFAULT_PROVIDER,
     DEFAULT_TEMPERATURE,
     DEFAULT_TOP_K,
+    PROVIDER_DEFAULTS,
 )
 
 
@@ -110,7 +112,7 @@ class TestGetLLM(unittest.TestCase):
 
     @patch("src.generation.llm.ChatOllama")
     def test_default_params(self, mock_cls):
-        """get_llm() passes default model and temperature."""
+        """get_llm() passes default model and temperature for ollama."""
         get_llm()
         mock_cls.assert_called_once_with(
             model=DEFAULT_MODEL, temperature=DEFAULT_TEMPERATURE
@@ -121,6 +123,11 @@ class TestGetLLM(unittest.TestCase):
         """get_llm() forwards custom model and temperature."""
         get_llm(model="phi3", temperature=0.5)
         mock_cls.assert_called_once_with(model="phi3", temperature=0.5)
+
+    def test_unknown_provider_raises(self):
+        """get_llm() raises ValueError for unknown providers."""
+        with self.assertRaises(ValueError):
+            get_llm(provider="nonexistent")
 
 
 # ── generate_answer tests ──────────────────────────────────────────
@@ -155,14 +162,14 @@ class TestGenerateAnswer(unittest.TestCase):
 
     @patch("src.generation.llm.get_llm")
     def test_connection_error_raised(self, mock_get_llm):
-        """A ConnectionError is raised when Ollama is unreachable."""
+        """A ConnectionError is raised when the LLM server is unreachable."""
         mock_llm = MagicMock()
         mock_llm.invoke.side_effect = Exception("Connection refused")
         mock_get_llm.return_value = mock_llm
 
         with self.assertRaises(ConnectionError) as ctx:
             generate_answer("question", _fake_chunks())
-        self.assertIn("Ollama", str(ctx.exception))
+        self.assertIn("provider", str(ctx.exception).lower())
 
     @patch("src.generation.llm.get_llm")
     def test_non_connection_error_propagated(self, mock_get_llm):
@@ -183,7 +190,9 @@ class TestGenerateAnswer(unittest.TestCase):
 
         generate_answer("q", _fake_chunks(), model="phi3")
         mock_get_llm.assert_called_once_with(
-            model="phi3", temperature=DEFAULT_TEMPERATURE
+            model="phi3",
+            temperature=DEFAULT_TEMPERATURE,
+            provider=DEFAULT_PROVIDER,
         )
 
 
@@ -211,9 +220,11 @@ class TestAsk(unittest.TestCase):
         self.assertIn("answer", result)
         self.assertIn("chunks", result)
         self.assertIn("model", result)
+        self.assertIn("provider", result)
         self.assertEqual(result["query"], "test query")
         self.assertEqual(result["answer"], "The answer.")
         self.assertEqual(result["model"], DEFAULT_MODEL)
+        self.assertEqual(result["provider"], DEFAULT_PROVIDER)
 
     @patch("src.generation.llm.generate_answer", return_value="ans")
     def test_passes_n_results(self, mock_generate):

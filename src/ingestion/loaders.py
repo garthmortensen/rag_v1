@@ -100,9 +100,11 @@ def load_directory(directory: str = RAW_DATA_DIR) -> list:
     print_ascii_banner()
 
     all_docs = []
-    files = sorted(glob.glob(os.path.join(directory, "*")))
+    files = sorted(glob.glob(os.path.join(directory, "**", "*"), recursive=True))
 
     for filepath in files:
+        if os.path.isdir(filepath):
+            continue
         ext = os.path.splitext(filepath)[1].lower()
         if ext not in LOADER_MAP:
             logger.warning(f"Skipping unsupported file type: {filepath}")

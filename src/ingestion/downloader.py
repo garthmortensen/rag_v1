@@ -24,7 +24,9 @@ from rich.panel import Panel
 
 # Default Configuration
 DEFAULT_CSV = "corpus/data_sources.csv"
+CITATIONS_CSV = "corpus/citations.csv"
 DEFAULT_DIR = "corpus/raw_data"
+CITATIONS_DIR = "corpus/raw_data/citations"
 LOG_FILE = "corpus/download.log"
 METADATA_CSV = "corpus/metadata.csv"
 METADATA_FIELDS = [
@@ -304,6 +306,128 @@ def download_files():
     )
     console.print(f"Metadata saved to: [bold]{METADATA_CSV}[/bold]")
     console.print(f"Summary saved to: [bold]{LOG_FILE}[/bold]")
+
+
+def download_citations():
+    """Download papers listed in corpus/citations.csv that have a download_url.
+
+    Files are saved to corpus/raw_data/citations/ and metadata is
+    appended to the shared corpus/metadata.csv so the ingestion
+    pipeline can pick them up.
+    """
+    if not os.path.exists(CITATIONS_CSV):
+        console.print(
+            f"[dim]No citations file at {CITATIONS_CSV} — skipping.[/dim]"
+        )
+        return
+
+    ensure_directory(CITATIONS_DIR)
+    headers = get_headers()
+    session = get_session()
+    session.headers.update(headers)
+    metadata = load_existing_metadata(METADATA_CSV)
+
+    # Read citations CSV — only rows that have a download_url
+    try:
+        with open(CITATIONS_CSV, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            rows = [
+                r for r in reader
+                if r.get("download_url", "").strip()
+            ]
+    except FileNotFoundError:
+        return
+
+    if not rows:
+        console.print("[dim]No downloadable citations found.[/dim]")
+        return
+
+    console.print(
+        f"\n[bold]📚 Citations:[/bold] {len(rows)} paper(s) with download URLs"
+    )
+
+    results = []
+
+    progress_layout = [
+        SpinnerColumn(),
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TimeRemainingColumn(),
+        TextColumn("({task.completed}/{task.total})"),
+    ]
+
+    with Progress(*progress_layout, console=console) as progress:
+        task_id = progress.add_task("Citations...", total=len(rows))
+
+        for row in rows:
+            authors = row.get("authors", "Unknown").strip()
+            year = row.get("year", "").strip()
+            title = row.get("title", "Unknown").strip()
+            category = row.get("category", "Unknown").strip()
+            download_url = row.get("download_url", "").strip()
+            resolved_url = row.get("resolved_url", "").strip()
+
+            # Derive filetype from the download URL
+            url_path = download_url.rsplit(".", 1)
+            filetype = url_path[-1].lower() if len(url_path) > 1 else "pdf"
+            if filetype not in {"pdf", "html", "csv", "xlsx", "txt"}:
+                filetype = "pdf"
+
+            # Build a short name for the file
+            short_name = f"{sanitize_filename(authors.split(',')[0])}_{year}"
+            filepath = os.path.join(
+                CITATIONS_DIR, f"{short_name}.{filetype}"
+            )
+
+            display_name = f"{authors} ({year})"
+            progress.update(
+                task_id,
+                description=f"Citations: [bold]{display_name[:50]}[/bold]",
+            )
+
+            if os.path.exists(filepath):
+                result_status = "[yellow]Skipped (Existed)[/yellow]"
+                console.print(f"  Exists: {display_name}")
+            else:
+                try:
+                    console.print(f"  Downloading: {display_name}...")
+                    response = session.get(download_url, timeout=60)
+                    response.raise_for_status()
+                    with open(filepath, "wb") as out_file:
+                        out_file.write(response.content)
+                    result_status = "[green]Downloaded[/green]"
+
+                    metadata[filepath] = capture_metadata(
+                        response,
+                        filepath,
+                        filetype,
+                        resolved_url or download_url,
+                        title,
+                        f"Citation — {category}",
+                        "Academic",
+                    )
+
+                    polite_sleep(MIN_DELAY, MAX_DELAY)
+
+                except Exception as e:
+                    result_status = "[red]Failed[/red]"
+                    console.print(f"  [red]Error:[/red] {e}")
+
+            results.append(
+                {"name": display_name, "category": category, "status": result_status}
+            )
+            progress.advance(task_id)
+
+    # Save metadata (shared with main downloads)
+    save_metadata(metadata, METADATA_CSV)
+
+    # Summary
+    save_summary(results)
+    console.print(
+        f"\n[green]Citations complete.[/green] "
+        f"Files saved to: [bold]{CITATIONS_DIR}[/bold]"
+    )
 
 
 if __name__ == "__main__":

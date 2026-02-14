@@ -226,16 +226,21 @@ def _generate_and_print_answer(
     query: str,
     chunks: list[dict],
     model: str | None = None,
+    provider: str | None = None,
 ) -> str | None:
     """Call the generation module and pretty-print the LLM answer.
 
-    Handles import errors (langchain-ollama not installed) and
-    connection errors (Ollama server not running) gracefully.
+    Handles import errors (provider package not installed) and
+    connection errors (server not running) gracefully.
 
     Returns the answer text, or None if generation failed.
     """
     try:
-        from src.generation.llm import generate_answer, DEFAULT_MODEL
+        from src.generation.llm import (
+            generate_answer,
+            DEFAULT_MODEL,
+            DEFAULT_PROVIDER,
+        )
     except ImportError:
         console.print(
             "\n[bold red]Error:[/bold red] langchain-ollama is not installed.\n"
@@ -244,13 +249,19 @@ def _generate_and_print_answer(
         return None
 
     model_name = model or DEFAULT_MODEL
+    provider_name = provider or DEFAULT_PROVIDER
     console.print(
-        f"\n[bold cyan]Generating answer with {model_name}…[/bold cyan]\n"
+        f"\n[bold cyan]Generating answer with {provider_name}/{model_name}…[/bold cyan]\n"
     )
 
     try:
-        answer = generate_answer(query, chunks, model=model_name)
+        answer = generate_answer(
+            query, chunks, model=model_name, provider=provider_name,
+        )
     except ConnectionError as exc:
+        console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
+        return None
+    except ImportError as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         return None
     except Exception as exc:
@@ -304,7 +315,13 @@ def main(argv: list[str] | None = None) -> None:
         "--model",
         type=str,
         default=None,
-        help="Ollama model to use for generation (default: llama3.2:3b)",
+        help="LLM model name (default: from config.txt)",
+    )
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default=None,
+        help="LLM provider: ollama, openai, anthropic, groq, google (default: from config.txt)",
     )
 
     args = parser.parse_args(argv)
@@ -318,7 +335,9 @@ def main(argv: list[str] | None = None) -> None:
 
     answer = None
     if args.answer:
-        answer = _generate_and_print_answer(args.query, results, model=args.model)
+        answer = _generate_and_print_answer(
+            args.query, results, model=args.model, provider=args.provider,
+        )
 
     # Log the full session to logs/
     log_query_session(
