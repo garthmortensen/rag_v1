@@ -1,3 +1,9 @@
+## 0.10.0 (2026-02-14)
+
+### Feat
+
+- **langchain**: replace diy functionality with langchain
+
 ## 0.9.0 (2026-02-14)
 
 ### Feat
