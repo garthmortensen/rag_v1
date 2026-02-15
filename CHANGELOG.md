@@ -1,3 +1,18 @@
+## 0.10.2 (2026-02-15)
+
+### Feat
+
+- **banner**: add section overview banner to Streamlit UI showing available PDF sections/subsections
+- **scan**: add `scan_pdf_sections()` lightweight probe for section metadata
+- **models**: update `PROVIDER_MODELS` with latest model IDs (GPT-5.x, Claude Opus 4, Gemini 3)
+- **rewriter**: add `src/generation/rewriter.py` — rewrite structured PDFs in plain English section-by-section (rewrite/summarize modes, CLI + programmatic API)
+- **rewriter-ui**: add `app_rewriter.py` — Streamlit UI for PDF rewriting with per-section progress bar, live preview, and download
+- **rewriter**: add `RewriteProgress` dataclass and `rewrite_pdf_iter()` generator for streaming progress to UIs
+
+### Fix
+
+- **config**: optimize chunk size to 2000 chars (from 10000) for better section-aware splitting
+
 ## 0.10.1 (2026-02-14)
 
 ### Refactor

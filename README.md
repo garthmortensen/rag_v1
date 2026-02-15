@@ -57,18 +57,18 @@ This project uses [Commitizen](https://commitizen-tools.github.io/commitizen/) t
 Pipeline settings are controlled by `config.txt` at the project root:
 
 ```text
-chunk_size       = 6000
+chunk_size       = 2000
 chunk_overlap    = 200
-collection_name  = stress_test_docs_6k
+collection_name  = stress_test_docs_2k
 llm_provider     = ollama
 llm_model        = llama3.2:3b
 ```
 
 | Key | What it does | Default |
 |-----|-------------|--------|
-| `chunk_size` | Characters per chunk | `1000` |
-| `chunk_overlap` | Overlap between consecutive chunks | `100` |
-| `collection_name` | ChromaDB collection to write/read | `stress_test_docs_1k` |
+| `chunk_size` | Characters per chunk | `2000` |
+| `chunk_overlap` | Overlap between consecutive chunks | `200` |
+| `collection_name` | ChromaDB collection to write/read | `stress_test_docs_2k` |
 | `llm_provider` | LLM backend: `ollama`, `openai`, `anthropic`, `google` | `ollama` |
 | `llm_model` | Model name/tag for the chosen provider | `llama3.2:3b` |
 
@@ -138,8 +138,8 @@ To create a second set of embeddings (e.g. larger chunks), just edit `config.txt
 
 ```bash
 # Edit config.txt:
-#   chunk_size      = 8000
-#   collection_name = stress_test_docs_8k
+#   chunk_size      = 4000
+#   collection_name = stress_test_docs_4k
 
 uv run python -m src.ingestion.processor
 ```
@@ -204,9 +204,9 @@ The LLM backend is configurable via `config.txt`:
 | Provider | Package (install with `uv add`) | Example models | API key env var |
 |----------|--------------------------------|---------------|----------------|
 | **ollama** (default) | `langchain-ollama` (included) | `llama3.2:3b`, `phi3` | — (local) |
-| **openai** | `langchain-openai` | `gpt-4o-mini`, `gpt-4o` | `OPENAI_API_KEY` |
-| **anthropic** | `langchain-anthropic` | `claude-sonnet-4-20250514` | `ANTHROPIC_API_KEY` |
-| **google** | `langchain-google-genai` | `gemini-2.0-flash` | `GOOGLE_API_KEY` |
+| **openai** | `langchain-openai` | `gpt-5.2`, `gpt-4.1` | `OPENAI_API_KEY` |
+| **anthropic** | `langchain-anthropic` | `claude-opus-4-6`, `claude-sonnet-4-5` | `ANTHROPIC_API_KEY` |
+| **google** | `langchain-google-genai` | `gemini-3-pro`, `gemini-2.5-flash` | `GOOGLE_API_KEY` |
 
 To use a remote provider:
 
@@ -304,16 +304,39 @@ uv run streamlit run app.py
 
 **Main pane:**
 - Chat-style interface with message history
+- **Section overview banner** — expandable table of contents showing all section-split PDFs with their sections and subsections, so users know what topics are available before asking questions
 - **Token-by-token streaming** — answers render word-by-word via `st.write_stream()` and the LCEL chain's `.stream()` method
 - LLM-generated answers with source citations
 - **Copy Q&A** — one-click button to copy the question and answer to clipboard
 - Expandable retrieved sources showing rank, category, distance, and chunk text
 
+## Rewriter UI (Streamlit)
+
+A dedicated Streamlit app for rewriting structured PDFs with visual progress:
+
+```bash
+uv run streamlit run app_rewriter.py
+```
+
+**Sidebar controls:**
+- **PDF picker** — auto-discovers PDFs with section headers in `corpus/raw_data/`
+- **Mode selector** — Full Rewrite (plain English) or Summarize (2–3 sentences per section)
+- **Provider & Model** — same provider/model dropdown as the main UI
+- **Temperature** — sampling temperature slider
+
+**Main pane:**
+- Section/subsection metrics for the selected PDF
+- Expandable section preview (table of contents)
+- **Per-section progress bar** — updates as each section is processed
+- **Live preview** — rewritten text appears in expanders as it completes
+- **Download button** — save the finished Markdown file
+
 ## Project Structure
 
 ```text
 rag_stress_testing/
-├── app.py                     # Streamlit web UI
+├── app.py                     # Streamlit web UI (RAG query)
+├── app_rewriter.py            # Streamlit web UI (PDF rewriter)
 ├── config.txt                 # Pipeline settings (chunk size, collection, LLM provider)
 ├── .env.example               # API key template (copy to .env)
 ├── corpus/
@@ -335,7 +358,8 @@ rag_stress_testing/
 │   │   ├── query.py           # Semantic search: embed query → ANN lookup
 │   │   └── query_logger.py    # Log query sessions to logs/
 │   ├── generation/
-│   │   └── llm.py             # LCEL chain: RAG_PROMPT | llm | StrOutputParser()
+│   │   ├── llm.py             # LCEL chain: RAG_PROMPT | llm | StrOutputParser()
+│   │   └── rewriter.py        # Rewrite structured PDFs in plain English
 │   └── evaluation/
 │       ├── dataset.py         # Curated Q&A pairs for ragas evaluation
 │       └── evaluate.py        # CLI runner: ragas metrics + CSV export
@@ -347,6 +371,7 @@ rag_stress_testing/
 │   ├── test_pdf_section_splitter.py
 │   ├── test_retrieval.py
 │   ├── test_generation.py
+│   ├── test_rewriter.py
 │   ├── test_query_logger.py
 │   └── test_utils.py
 ├── docs/
@@ -355,6 +380,44 @@ rag_stress_testing/
 ├── CHANGELOG.md
 └── README.md
 ```
+
+## PDF Rewriter
+
+Rewrite structured model documentation PDFs in plain English, section by section. The rewriter uses the section-aware PDF splitter to preserve document structure and sends each subsection through the configured LLM.
+
+### Example: Aggregation Models
+
+Rewrite or summarize the **Proposed Stress Test Model Documentation — Aggregation Models** PDF (75 pages, covering the Balances, Provisions, Retained Earnings, and Capital models):
+
+```bash
+# Full plain-English rewrite
+uv run python -m src.generation.rewriter \
+    corpus/raw_data/proposed_stress_test_model_documentation_aggregation_models.pdf
+
+# Condensed summary per section
+uv run python -m src.generation.rewriter \
+    corpus/raw_data/proposed_stress_test_model_documentation_aggregation_models.pdf \
+    --mode summarize
+
+# Use a faster remote model for the rewrite
+uv run python -m src.generation.rewriter \
+    corpus/raw_data/proposed_stress_test_model_documentation_aggregation_models.pdf \
+    --provider openai --model gpt-4.1
+```
+
+This works on any of the 9 section-split PDFs (credit risk, market risk, PPNR, operational risk, aggregation, GMS, macroeconomic model guides).
+
+### CLI flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--mode` | `rewrite` (full) or `summarize` (condensed) | `rewrite` |
+| `--provider` | LLM provider | config.txt |
+| `--model` | Model name | config.txt |
+| `--temperature` | Sampling temperature | `0.3` |
+| `--output-dir` | Output directory | `output/rewrites` |
+
+Output is a Markdown file in `output/rewrites/` with the original section/subsection hierarchy preserved.
 
 ## Roadmap
 
@@ -399,6 +462,8 @@ rag_stress_testing/
 - [x] Measure generation quality via **ragas** (Faithfulness, Response Relevancy, Context Recall, Factual Correctness)
 - [x] Add LangSmith tracing support (zero-config via `LANGCHAIN_TRACING_V2` env var)
 - [x] Document-based retrieval API (`retrieve_as_documents()` returning `list[Document]`)
+- [x] Plain-English PDF rewriter (`src/generation/rewriter.py` — rewrite/summarize structured PDFs section-by-section)
+- [x] Streamlit rewriter UI (`app_rewriter.py` — point-and-click PDF rewriting with per-section progress)
 - [ ] Measure retrieval quality (precision, recall, MRR)
 - [ ] Tune chunk size, overlap, and top-k parameters
 - [ ] Add logging and error handling
@@ -438,8 +503,8 @@ rag_stress_testing/
 
 - **Config driven**: `chunk_size`, `chunk_overlap`, and `collection_name` are read from `config.txt`
 - **Splitter**: Recursive Character Text Splitter
-- **Chunk Size**: Configurable (default 1000 chars; set to 6000 for richer context)
-- **Overlap**: Configurable (default 100 chars)
+- **Chunk Size**: Configurable (default 2000 chars; previously 1000, tunable for richer context)
+- **Overlap**: Configurable (default 200 chars)
 - **Multiple collections**: Each config produces a separate ChromaDB collection — switch instantly by editing `config.txt`
 - **Section-aware splitting**: Structured model documentation PDFs are automatically split by section/subsection before chunking, producing chunks with richer metadata
 

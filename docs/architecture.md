@@ -4,7 +4,8 @@
 
 ```text
 rag_stress_testing_v1/
-├── app.py                     # Streamlit web UI
+├── app.py                     # Streamlit web UI (RAG query)
+├── app_rewriter.py            # Streamlit web UI (PDF rewriter)
 ├── config.txt                 # Pipeline settings (chunk size, collection, LLM provider)
 ├── .env.example               # API key template (copy to .env)
 ├── corpus/
@@ -26,7 +27,8 @@ rag_stress_testing_v1/
 │   │   ├── query.py           # Semantic search: embed query → ANN lookup → ranked results
 │   │   └── query_logger.py    # Log query sessions to logs/
 │   ├── generation/
-│   │   └── llm.py             # LCEL chain: RAG_PROMPT | llm | StrOutputParser()
+│   │   ├── llm.py             # LCEL chain: RAG_PROMPT | llm | StrOutputParser()
+│   │   └── rewriter.py        # Rewrite structured PDFs in plain English
 │   └── evaluation/
 │       ├── dataset.py         # Curated Q&A pairs for ragas evaluation
 │       └── evaluate.py        # CLI runner: ragas metrics + CSV export
@@ -38,6 +40,7 @@ rag_stress_testing_v1/
 │   ├── test_pdf_section_splitter.py
 │   ├── test_retrieval.py
 │   ├── test_generation.py
+│   ├── test_rewriter.py
 │   ├── test_query_logger.py
 │   └── test_utils.py
 ├── docs/
@@ -69,12 +72,12 @@ graph LR
         end
 
         subgraph Transform
-            CHUNK["processor.py<br/>chunk_documents()<br/>1000 chars / 100 overlap"]
+            CHUNK["processor.py<br/>chunk_documents()<br/>2000 chars / 200 overlap"]
             EMBED["model.py<br/>HuggingFaceEmbeddings<br/>all-MiniLM-L6-v2 · 384d"]
         end
 
         subgraph Load
-            CHROMA[("ChromaDB<br/>corpus/vector_db/<br/>collection: stress_test_docs_1k | _6k")]
+            CHROMA[("ChromaDB<br/>corpus/vector_db/<br/>collection: stress_test_docs_2k")]
         end
 
         LOAD --> CHUNK --> EMBED --> CHROMA
@@ -169,7 +172,7 @@ sequenceDiagram
         LOAD -->> PROC: list[Document]
 
         PROC ->> CHUNK: chunk_documents(docs)
-        CHUNK ->> CHUNK: RecursiveCharacterTextSplitter<br/>size=1000, overlap=100
+        CHUNK ->> CHUNK: RecursiveCharacterTextSplitter<br/>size=2000, overlap=200
         CHUNK -->> PROC: list[Document] (chunked)
 
         PROC ->> EMB: embed_and_store(chunks)
@@ -332,7 +335,7 @@ graph TD
     end
 
     subgraph Chunking["processor.py"]
-        SPLIT["RecursiveCharacterTextSplitter<br/>size=1000 · overlap=100"]
+        SPLIT["RecursiveCharacterTextSplitter<br/>size=2000 · overlap=200"]
     end
 
     subgraph Embedding["model.py"]
@@ -569,6 +572,7 @@ graph BT
 | Function | Purpose |
 |----------|--------|
 | `has_section_headers(filepath)` | Quick probe: does the PDF have `Model Documentation:` headers? |
+| `scan_pdf_sections(filepath)` | Lightweight probe: returns `dict[str, list[str]]` of section → subsection names (used by the Streamlit banner) |
 | `load_pdf_by_section(filepath)` | Full splitter: returns `list[Document]` with section/subsection metadata |
 | `_strip_page_header(text)` | Removes the repetitive header line from page content |
 
@@ -659,8 +663,8 @@ For PDF files, `load_file()` first checks `has_section_headers()` — if the PDF
 
 Implemented in `processor.py` → `chunk_documents()` using `RecursiveCharacterTextSplitter`.
 
-- **Chunk Size**: 1,000 characters (~200–300 words).
-- **Overlap**: 100 characters.
+- **Chunk Size**: 2,000 characters (~400–600 words).
+- **Overlap**: 200 characters.
 
 Each chunk inherits its parent document's metadata.
 
@@ -717,7 +721,7 @@ Step 3: embed_and_store(chunks) → int (count upserted) (model.py)
 | -------- | ----- |
 | `MODEL_NAME` | `"all-MiniLM-L6-v2"` |
 | `VECTOR_DB_DIR` | `"corpus/vector_db"` |
-| `COLLECTION_NAME` | from `config.txt` (default `"stress_test_docs_1k"`) |
+| `COLLECTION_NAME` | from `config.txt` (default `"stress_test_docs_2k"`) |
 | `METADATA_CSV` | `"corpus/metadata.csv"` |
 | `DEFAULT_BATCH_SIZE` | `500` |
 

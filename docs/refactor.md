@@ -380,7 +380,7 @@ def test_returns_answer(self, mock_rag_chain):
 ### Test results
 
 ```
-163 passed, 1 failed (pre-existing), 1 warning
+181 passed, 1 failed (pre-existing), 1 warning
 ```
 
 The single failure (`test_market_risk_models`) is a pre-existing integration test that depends on specific vector DB content — unrelated to this refactor.
@@ -393,11 +393,14 @@ The single failure (`test_market_risk_models`) is a pre-existing integration tes
 
 | File | Purpose |
 |------|---------|
-| `src/ingestion/pdf_section_splitter.py` | Section-aware PDF splitter for structured model documentation |
+| `src/ingestion/pdf_section_splitter.py` | Section-aware PDF splitter for structured model documentation; includes `scan_pdf_sections()` for Streamlit banner |
+| `src/generation/rewriter.py` | Rewrite structured PDFs in plain English section-by-section (rewrite/summarize modes, CLI + API); `RewriteProgress` dataclass + `rewrite_pdf_iter()` generator for UI streaming |
+| `app_rewriter.py` | Streamlit UI for PDF rewriting with per-section progress bar, live preview, and download |
 | `src/evaluation/__init__.py` | Package marker (empty) |
 | `src/evaluation/dataset.py` | 8 curated Q&A pairs for ragas evaluation |
 | `src/evaluation/evaluate.py` | CLI runner: `build_eval_dataset()` + `run_evaluation()` |
-| `tests/test_pdf_section_splitter.py` | 27 unit tests for the section-aware splitter |
+| `tests/test_pdf_section_splitter.py` | 31 unit tests for the section-aware splitter (including `scan_pdf_sections()`) |
+| `tests/test_rewriter.py` | 17 unit tests for the PDF rewriter |
 | `tests/test_evaluation.py` | 7 unit tests for the evaluation module |
 
 ### Modified files
@@ -405,15 +408,16 @@ The single failure (`test_market_risk_models`) is a pre-existing integration tes
 | File | Changes |
 |------|---------|
 | `src/ingestion/loaders.py` | Routes structured PDFs to `pdf_section_splitter.py` via `has_section_headers()` probe |
-| `src/generation/llm.py` | LCEL chain (`rag_chain()`, `stream_answer()`, `format_docs()`); `generate_answer()` uses chain internally; `ask()` returns `documents` key |
+| `src/generation/llm.py` | LCEL chain (`rag_chain()`, `stream_answer()`, `format_docs()`); `generate_answer()` uses chain internally; `ask()` returns `documents` key; `PROVIDER_MODELS` dict with curated model lists per provider; model selectbox with "Other…" escape hatch |
 | `src/retrieval/query.py` | Added `retrieve_as_documents()` returning `list[Document]` |
-| `app.py` | Replaced threaded timer with `st.write_stream(stream_answer(...))`, removed `threading` import |
+| `app.py` | Replaced threaded timer with `st.write_stream(stream_answer(...))`; model selectbox with `PROVIDER_MODELS`; HTML/JS clipboard copy button; `st.status()` loading indicators; precise timestamps; section overview banner via `scan_pdf_sections()` |
+| `config.txt` | `chunk_size=2000`, `chunk_overlap=200`, `collection_name=stress_test_docs_2k` |
 | `.env.example` | Added `LANGCHAIN_TRACING_V2` and `LANGCHAIN_API_KEY` |
 | `pyproject.toml` | Added `ragas>=0.4.3` and `datasets>=4.5.0` |
 | `tests/test_generation.py` | Rewrote `TestGenerateAnswer` to mock `rag_chain`; added `TestFormatDocs`, `TestRagChain`, `TestStreamAnswer`; updated `TestAsk` for `documents` key |
 | `tests/test_retrieval.py` | Added `TestRetrieveAsDocuments` (4 tests) |
 | `README.md` | Added Evaluation, LangSmith, streaming sections; updated project tree and roadmap |
-| `docs/architecture.md` | Updated diagrams and ADRs (002–005) for LCEL, ragas, LangSmith, streaming |
+| `docs/architecture.md` | Updated diagrams and ADRs (002–006) for LCEL, ragas, LangSmith, streaming, section splitting |
 
 ---
 
