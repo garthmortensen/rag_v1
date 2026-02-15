@@ -17,7 +17,7 @@ collection_name  = stress_test_docs_10k
 beep_on_answer   = true
 
 # ── LLM provider ───────────────────────────────────────────────────
-# Supported: ollama, openai, anthropic, groq, google
+# Supported: ollama, openai, anthropic, google
 # API keys are read from .env (see .env.example).
 llm_provider     = ollama
 llm_model        = llama3.2:3b

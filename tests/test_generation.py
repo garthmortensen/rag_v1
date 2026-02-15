@@ -16,9 +16,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from src.generation.llm import (
     build_prompt,
+    format_context,
     generate_answer,
     get_llm,
     ask,
+    RAG_PROMPT,
     SYSTEM_PROMPT,
     DEFAULT_MODEL,
     DEFAULT_PROVIDER,
@@ -50,6 +52,54 @@ def _fake_chunks(n: int = 3) -> list[dict]:
 
 
 # ── build_prompt tests ─────────────────────────────────────────────
+
+
+class TestFormatContext(unittest.TestCase):
+    """Tests for the context formatter."""
+
+    def test_formats_chunks_with_source(self):
+        """Each chunk is prefixed with [Source: title | path]."""
+        result = format_context(_fake_chunks(2))
+        self.assertIn("[Source: Stress Test Document 0", result)
+        self.assertIn("[Source: Stress Test Document 1", result)
+
+    def test_separates_chunks_with_divider(self):
+        """Chunks are joined by --- dividers."""
+        result = format_context(_fake_chunks(2))
+        self.assertIn("---", result)
+
+    def test_empty_chunks(self):
+        """Returns empty string for no chunks."""
+        result = format_context([])
+        self.assertEqual(result, "")
+
+    def test_missing_metadata_keys(self):
+        """Falls back to 'Unknown' when title/source are missing."""
+        chunks = [{"rank": 1, "id": "x", "distance": 0.1,
+                    "text": "txt", "metadata": {}}]
+        result = format_context(chunks)
+        self.assertIn("Unknown", result)
+
+
+class TestRAGPrompt(unittest.TestCase):
+    """Tests for the ChatPromptTemplate."""
+
+    def test_format_messages_returns_two(self):
+        """RAG_PROMPT produces exactly a system + human message."""
+        messages = RAG_PROMPT.format_messages(
+            context="some context", question="some question",
+        )
+        self.assertEqual(len(messages), 2)
+        self.assertEqual(messages[0].type, "system")
+        self.assertEqual(messages[1].type, "human")
+
+    def test_context_and_question_injected(self):
+        """The human message contains the supplied context and question."""
+        messages = RAG_PROMPT.format_messages(
+            context="CTX_VALUE", question="Q_VALUE",
+        )
+        self.assertIn("CTX_VALUE", messages[1].content)
+        self.assertIn("Q_VALUE", messages[1].content)
 
 
 class TestBuildPrompt(unittest.TestCase):
@@ -148,7 +198,8 @@ class TestGenerateAnswer(unittest.TestCase):
 
     @patch("src.generation.llm.get_llm")
     def test_passes_system_and_human_messages(self, mock_get_llm):
-        """The LLM receives a system message and a human message."""
+        """The LLM receives a system message and a human message
+        via ChatPromptTemplate.format_messages()."""
         mock_llm = MagicMock()
         mock_llm.invoke.return_value = MagicMock(content="ok")
         mock_get_llm.return_value = mock_llm
@@ -156,9 +207,12 @@ class TestGenerateAnswer(unittest.TestCase):
         generate_answer("question", _fake_chunks())
         messages = mock_llm.invoke.call_args[0][0]
         self.assertEqual(len(messages), 2)
-        self.assertEqual(messages[0][0], "system")
-        self.assertEqual(messages[0][1], SYSTEM_PROMPT)
-        self.assertEqual(messages[1][0], "human")
+        # ChatPromptTemplate produces BaseMessage objects, not tuples
+        self.assertEqual(messages[0].type, "system")
+        self.assertIn("precise research assistant", messages[0].content)
+        self.assertEqual(messages[1].type, "human")
+        self.assertIn("CONTEXT:", messages[1].content)
+        self.assertIn("QUESTION:", messages[1].content)
 
     @patch("src.generation.llm.get_llm")
     def test_connection_error_raised(self, mock_get_llm):

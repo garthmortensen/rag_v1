@@ -4,12 +4,16 @@
 
 ```text
 rag_stress_testing_v1/
+├── app.py                     # Streamlit web UI
+├── config.txt                 # Pipeline settings (chunk size, collection, LLM provider)
+├── .env.example               # API key template (copy to .env)
 ├── corpus/
 │   ├── data_sources.csv       # URLs to download
 │   ├── metadata.csv           # Per-file download metadata (doc_id, title, author, …)
 │   ├── raw_data/              # Downloaded files (.html, .csv, .pdf, .xlsx)
 │   └── vector_db/             # ChromaDB persistent storage (HNSW index)
 ├── src/
+│   ├── config.py              # Reads config.txt + .env (via python-dotenv)
 │   ├── utils.py               # RAM-aware embedding model selection
 │   ├── ingestion/
 │   │   ├── downloader.py      # download files from data_sources.csv
@@ -18,10 +22,12 @@ rag_stress_testing_v1/
 │   ├── embedding/
 │   │   └── model.py           # Transform + Load: embed via HuggingFace, upsert to ChromaDB
 │   ├── retrieval/
-│   │   └── query.py           # Semantic search: embed query → ANN lookup → ranked results
+│   │   ├── query.py           # Semantic search: embed query → ANN lookup → ranked results
+│   │   └── query_logger.py    # Log query sessions to logs/
 │   └── generation/
-│       └── llm.py             # RAG generation: build prompt → Ollama LLM → grounded answer
+│       └── llm.py             # Multi-provider LLM factory + RAG generation
 ├── tests/
+│   ├── test_config.py
 │   ├── test_downloader.py
 │   ├── test_embedding.py
 │   ├── test_retrieval.py
@@ -77,7 +83,7 @@ graph LR
 
     subgraph Phase4["Phase 4 — Generate"]
         PROMPT["llm.py<br/>build_prompt()"]
-        LLM["ChatOllama<br/>llama3.2:3b"]
+        LLM["get_llm()<br/>ollama / openai / anthropic / google"]
         ANSWER["Grounded answer<br/>with source citations"]
 
         PROMPT --> LLM --> ANSWER
@@ -118,7 +124,7 @@ sequenceDiagram
     participant CHROMA as 🛢 ChromaDB<br/>stress_test_docs_*
     participant QUERY as query.py<br/>retrieve()
     participant LLM as llm.py<br/>ask()
-    participant OLLAMA as ChatOllama<br/>llama3.2:3b
+    participant OLLAMA as get_llm()<br/>ollama / openai /<br/>anthropic / google
 
     rect rgba(0, 0, 0, 0)
         Note over DL,FS: Phase 1 — Acquire
@@ -205,7 +211,7 @@ sequenceDiagram
     participant GEN as query.py<br/>_generate_and_print_answer()
     participant LLM as llm.py<br/>generate_answer()
     participant PROMPT as llm.py<br/>build_prompt()
-    participant OLLAMA as ChatOllama<br/>llama3.2:3b
+    participant OLLAMA as get_llm()<br/>ollama / openai /<br/>anthropic / google
     participant LOG as query_logger.py<br/>log_query_session()
 
     Note over User,CLI: User runs: python -m src.retrieval.query "question" --answer
@@ -361,12 +367,12 @@ graph BT
     MODEL["model.py<br/><i>embed + store</i>"]
     DL["downloader.py<br/><i>HTTP fetcher</i>"]
     QUERY["query.py<br/><i>semantic search</i>"]
-    GEN["llm.py<br/><i>RAG generation</i>"]
+    GEN["llm.py<br/><i>multi-provider RAG</i>"]
 
     LC_SPLIT["langchain-text-splitters"]
     LC_COMM["langchain-community"]
     LC_HF["langchain-huggingface"]
-    LC_OL["langchain-ollama"]
+    LC_OL["langchain-ollama<br/>langchain-openai<br/>langchain-anthropic<br/>langchain-google-genai"]
     CHROMA["chromadb"]
 
     PROC --> LOAD
@@ -445,13 +451,13 @@ graph BT
 
 **Rationale:** Simplest setup (`pip install chromadb`), runs in the same Python process with no Docker or server required. Stores data to disk at `corpus/vector_db/`. Sufficient for a single-user learning/development project.
 
-#### 1.7 LLM Backend: `Ollama`
+#### 1.7 LLM Backend: Multi-provider via `config.txt`
 
-**Context:** The retrieval module returns relevant document chunks, but users want natural-language answers grounded in those chunks (RAG generation).
+**Context:** The retrieval module returns relevant document chunks, but users want natural-language answers grounded in those chunks (RAG generation). Not all users have a GPU-capable machine for local inference.
 
-**Decision:** Use **Ollama** as the local LLM runtime, integrated via **langchain-ollama**.
+**Decision:** Default to **Ollama** for local inference; support **OpenAI**, **Anthropic**, and **Google Gemini** as remote alternatives. The provider is configured in `config.txt` (`llm_provider`) and API keys are loaded from `.env` via `python-dotenv`.
 
-**Rationale:** Runs fully offline — no API keys, no cloud costs, no data leakage. Supports many open-weight models (Llama 3.2, Phi-3, Mistral, etc.) with a single `ollama pull` command. The `langchain-ollama` package provides a `ChatOllama` class that plugs directly into the existing LangChain ecosystem. Default model is `llama3.2:3b` — small enough for laptops yet capable enough for grounded Q&A.
+**Rationale:** Ollama runs fully offline — no API keys, no cloud costs, no data leakage. For users with weaker hardware, remote providers offer access to larger models without local GPU requirements. The `get_llm()` factory in `llm.py` lazily imports only the needed provider package, so unused providers add zero overhead. Each provider’s LangChain integration (`langchain-openai`, `langchain-anthropic`, `langchain-google-genai`) is an optional dependency installed only when needed.
 
 ---
 

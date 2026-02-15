@@ -9,7 +9,6 @@ Supported providers (set ``llm_provider`` in config.txt):
 * **ollama** — local Ollama server (default, no API key needed)
 * **openai** — OpenAI API (requires ``OPENAI_API_KEY`` in .env)
 * **anthropic** — Anthropic API (requires ``ANTHROPIC_API_KEY``)
-* **groq** — Groq API (requires ``GROQ_API_KEY``, free tier available)
 * **google** — Google Gemini API (requires ``GOOGLE_API_KEY``)
 
 API keys are loaded from a ``.env`` file at the project root via
@@ -23,6 +22,7 @@ Usage (programmatic):
 import logging
 import textwrap
 
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 
 from src.config import CFG
@@ -40,7 +40,6 @@ PROVIDER_DEFAULTS: dict[str, str] = {
     "ollama": "llama3.2:3b",
     "openai": "gpt-4o-mini",
     "anthropic": "claude-sonnet-4-20250514",
-    "groq": "llama-3.3-70b-versatile",
     "google": "gemini-2.0-flash",
 }
 
@@ -60,10 +59,46 @@ SYSTEM_PROMPT = textwrap.dedent("""\
 """)
 
 
-# ── Prompt builder ──────────────────────────────────────────────────
+# ── Chat prompt template (LangChain) ───────────────────────────────
+RAG_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", SYSTEM_PROMPT),
+    ("human", "CONTEXT:\n{context}\n\nQUESTION:\n{question}\n\nANSWER:"),
+])
+
+
+# ── Context formatter ──────────────────────────────────────────────
+
+def format_context(chunks: list[dict]) -> str:
+    """Format retrieved chunks into a context block for the prompt.
+
+    Parameters
+    ----------
+    chunks : list[dict]
+        Output of ``retrieve_formatted()`` — each dict has keys
+        ``rank``, ``id``, ``distance``, ``text``, ``metadata``.
+
+    Returns
+    -------
+    str
+        Newline-separated context with source citations.
+    """
+    context_parts: list[str] = []
+    for chunk in chunks:
+        title = chunk["metadata"].get("title", "Unknown")
+        source = chunk["metadata"].get("source", "Unknown")
+        context_parts.append(
+            f"[Source: {title} | {source}]\n{chunk['text']}"
+        )
+    return "\n\n---\n\n".join(context_parts)
+
 
 def build_prompt(query: str, chunks: list[dict]) -> str:
     """Assemble a RAG prompt from a query and retrieved chunks.
+
+    Uses ``RAG_PROMPT`` (a ``ChatPromptTemplate``) internally but
+    returns the human-message text as a plain string for backward
+    compatibility with callers that inspect prompt content
+    (tests, logging).
 
     Parameters
     ----------
@@ -78,22 +113,12 @@ def build_prompt(query: str, chunks: list[dict]) -> str:
     str
         A formatted prompt ready to send to the LLM.
     """
-    context_parts: list[str] = []
-    for chunk in chunks:
-        title = chunk["metadata"].get("title", "Unknown")
-        source = chunk["metadata"].get("source", "Unknown")
-        context_parts.append(
-            f"[Source: {title} | {source}]\n{chunk['text']}"
-        )
-
-    context_block = "\n\n---\n\n".join(context_parts)
-
-    prompt = (
+    context_block = format_context(chunks)
+    return (
         f"CONTEXT:\n{context_block}\n\n"
         f"QUESTION:\n{query}\n\n"
         f"ANSWER:"
     )
-    return prompt
 
 
 # ── LLM interaction ─────────────────────────────────────────────────
@@ -113,7 +138,7 @@ def get_llm(
         Sampling temperature (lower = more deterministic).
     provider : str
         One of ``"ollama"``, ``"openai"``, ``"anthropic"``,
-        ``"groq"``, ``"google"``.
+        ``"google"``.
 
     Returns
     -------
@@ -155,16 +180,6 @@ def get_llm(
             )
         return ChatAnthropic(model=model, temperature=temperature)
 
-    if provider == "groq":
-        try:
-            from langchain_groq import ChatGroq
-        except ImportError:
-            raise ImportError(
-                "langchain-groq is required for the groq provider.\n"
-                "  Run: uv add langchain-groq"
-            )
-        return ChatGroq(model=model, temperature=temperature)
-
     if provider == "google":
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
@@ -201,7 +216,7 @@ def generate_answer(
     temperature : float
         Sampling temperature.
     provider : str
-        LLM provider name (ollama, openai, anthropic, groq, google).
+        LLM provider name (ollama, openai, anthropic, google).
 
     Returns
     -------
@@ -222,10 +237,10 @@ def generate_answer(
     )
 
     try:
-        messages = [
-            ("system", SYSTEM_PROMPT),
-            ("human", prompt),
-        ]
+        context_block = format_context(chunks)
+        messages = RAG_PROMPT.format_messages(
+            context=context_block, question=query,
+        )
         response = llm.invoke(messages)
         answer = response.content
     except Exception as exc:
@@ -279,7 +294,7 @@ def ask(
     temperature : float
         Sampling temperature.
     provider : str
-        LLM provider name (ollama, openai, anthropic, groq, google).
+        LLM provider name (ollama, openai, anthropic, google).
     persist_dir : str | None
         ChromaDB directory (uses default if None).
     collection_name : str | None

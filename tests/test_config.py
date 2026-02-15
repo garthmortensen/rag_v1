@@ -126,11 +126,11 @@ class TestLoadConfigParsing(unittest.TestCase):
     def test_custom_llm_provider_and_model(self):
         """llm_provider and llm_model can be overridden in the config file."""
         path = self._write_temp(
-            "llm_provider = groq\nllm_model = llama-3.3-70b-versatile\n"
+            "llm_provider = openai\nllm_model = gpt-4o-mini\n"
         )
         cfg = load_config(path)
-        self.assertEqual(cfg["llm_provider"], "groq")
-        self.assertEqual(cfg["llm_model"], "llama-3.3-70b-versatile")
+        self.assertEqual(cfg["llm_provider"], "openai")
+        self.assertEqual(cfg["llm_model"], "gpt-4o-mini")
 
 
 if __name__ == "__main__":

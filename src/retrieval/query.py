@@ -321,7 +321,7 @@ def main(argv: list[str] | None = None) -> None:
         "--provider",
         type=str,
         default=None,
-        help="LLM provider: ollama, openai, anthropic, groq, google (default: from config.txt)",
+        help="LLM provider: ollama, openai, anthropic, google (default: from config.txt)",
     )
 
     args = parser.parse_args(argv)

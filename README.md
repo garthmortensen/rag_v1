@@ -60,13 +60,17 @@ Pipeline settings are controlled by `config.txt` at the project root:
 chunk_size       = 6000
 chunk_overlap    = 200
 collection_name  = stress_test_docs_6k
+llm_provider     = ollama
+llm_model        = llama3.2:3b
 ```
 
 | Key | What it does | Default |
-|-----|-------------|---------|
+|-----|-------------|--------|
 | `chunk_size` | Characters per chunk | `1000` |
 | `chunk_overlap` | Overlap between consecutive chunks | `100` |
 | `collection_name` | ChromaDB collection to write/read | `stress_test_docs_1k` |
+| `llm_provider` | LLM backend: `ollama`, `openai`, `anthropic`, `google` | `ollama` |
+| `llm_model` | Model name/tag for the chosen provider | `llama3.2:3b` |
 
 ### Switching between embedding sets
 
@@ -162,7 +166,37 @@ uv run python -m src.retrieval.query "CET1 capital ratio" --top-k 10 --filter so
 
 ## Answer Generation (RAG)
 
-Add the `--answer` flag for a ChatGPT-like experience — retrieves the top-k chunks, builds a grounded prompt, and sends it to a local Ollama LLM. Answers include source citations:
+Add the `--answer` flag for a ChatGPT-like experience — retrieves the top-k chunks, builds a grounded prompt, and sends it to the configured LLM. Answers include source citations.
+
+### LLM Providers
+
+The LLM backend is configurable via `config.txt`:
+
+| Provider | Package (install with `uv add`) | Example models | API key env var |
+|----------|--------------------------------|---------------|----------------|
+| **ollama** (default) | `langchain-ollama` (included) | `llama3.2:3b`, `phi3` | — (local) |
+| **openai** | `langchain-openai` | `gpt-4o-mini`, `gpt-4o` | `OPENAI_API_KEY` |
+| **anthropic** | `langchain-anthropic` | `claude-sonnet-4-20250514` | `ANTHROPIC_API_KEY` |
+| **google** | `langchain-google-genai` | `gemini-2.0-flash` | `GOOGLE_API_KEY` |
+
+To use a remote provider:
+
+1. **Copy the env template** and add your API key:
+   ```bash
+   cp .env.example .env
+   # edit .env — uncomment and fill in the key you need
+   ```
+2. **Install the provider package**:
+   ```bash
+   uv add langchain-openai   # or langchain-anthropic, langchain-google-genai
+   ```
+3. **Set the provider in `config.txt`**:
+   ```text
+   llm_provider = openai
+   llm_model    = gpt-4o-mini
+   ```
+
+### Using Ollama (local, default)
 
 1. **Install Ollama** (one-time):
    ```bash
@@ -176,6 +210,14 @@ Add the `--answer` flag for a ChatGPT-like experience — retrieves the top-k ch
    uv run python -m src.retrieval.query "capital ratios" --answer --model phi3
    ```
 
+### CLI flags
+
+| Flag | Description |
+|------|-------------|
+| `--answer` | Generate an LLM answer from retrieved chunks |
+| `--model MODEL` | Override the model from `config.txt` |
+| `--provider PROVIDER` | Override the provider from `config.txt` |
+
 ## Web UI (Streamlit)
 
 A multi-pane browser interface for interactive querying:
@@ -188,12 +230,14 @@ uv run streamlit run app.py
 - **config.txt** — shows active pipeline configuration
 - **Collection picker** — switch between embedding collections (1k, 8k, etc.) with live chunk counts
 - **Top-K slider** — control how many chunks are retrieved
-- **Metadata filter** — optional filter (e.g. `source_type=pdf`)
-- **Model & Temperature** — choose Ollama model and sampling temperature
+- **Source types & categories** — filter by file type, source org, and category
+- **LLM Provider & Model** — choose provider (ollama, openai, anthropic, google) and model
+- **Temperature** — sampling temperature slider
 
 **Main pane:**
 - Chat-style interface with message history
 - LLM-generated answers with source citations
+- **Copy Q&A** — one-click button to copy the question and answer to clipboard
 - Expandable retrieved sources showing rank, category, distance, and chunk text
 
 ## Project Structure
@@ -201,14 +245,15 @@ uv run streamlit run app.py
 ```text
 rag_stress_testing/
 ├── app.py                     # Streamlit web UI
-├── config.txt                 # Pipeline settings (chunk size, collection name)
+├── config.txt                 # Pipeline settings (chunk size, collection, LLM provider)
+├── .env.example               # API key template (copy to .env)
 ├── corpus/
 │   ├── data_sources.csv       # URLs and metadata for downloading
 │   ├── metadata.csv           # Auto-generated download metadata
 │   ├── raw_data/              # Downloaded files (HTML, CSV, PDF, etc.)
 │   └── vector_db/             # ChromaDB persistent storage (HNSW index)
 ├── src/
-│   ├── config.py              # Reads config.txt key=value settings
+│   ├── config.py              # Reads config.txt + .env (via python-dotenv)
 │   ├── utils.py               # RAM-aware embedding model selection
 │   ├── ingestion/
 │   │   ├── downloader.py      # Downloads files from data_sources.csv
@@ -217,11 +262,12 @@ rag_stress_testing/
 │   ├── embedding/
 │   │   └── model.py           # Embed via HuggingFace, upsert to ChromaDB
 │   ├── retrieval/
-│   │   │   ├── query.py           # Semantic search: embed query → ANN lookup
+│   │   ├── query.py           # Semantic search: embed query → ANN lookup
 │   │   └── query_logger.py    # Log query sessions to logs/
 │   └── generation/
-│       └── llm.py             # RAG generation: prompt → Ollama LLM → answer
+│       └── llm.py             # Multi-provider LLM factory + RAG generation
 ├── tests/
+│   ├── test_config.py
 │   ├── test_downloader.py
 │   ├── test_embedding.py
 │   ├── test_retrieval.py
@@ -265,6 +311,7 @@ rag_stress_testing/
 ### Phase 4: retrieval & generation
 - [x] Implement semantic search over vector store (`src/retrieval/query.py`)
 - [x] Integrate LLM for answer generation — Ollama via `langchain-ollama` (`src/generation/llm.py`)
+- [x] Multi-provider LLM support (Ollama, OpenAI, Anthropic, Google) via `config.txt` + `.env`
 - [x] Build a simple query interface (CLI with `--answer` flag)
 - [x] Add source citation to generated answers
 
