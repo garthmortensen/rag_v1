@@ -1,3 +1,9 @@
+## 0.10.1 (2026-02-14)
+
+### Refactor
+
+- **refactor**: major refactor to add evaluation
+
 ## 0.10.0 (2026-02-14)
 
 ### Feat
