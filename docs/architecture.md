@@ -16,9 +16,10 @@ rag_stress_testing_v1/
 │   ├── config.py              # Reads config.txt + .env (via python-dotenv)
 │   ├── utils.py               # RAM-aware embedding model selection
 │   ├── ingestion/
-│   │   ├── downloader.py      # download files from data_sources.csv
-│   │   ├── loaders.py         # Extract: LangChain Community document loaders
-│   │   └── processor.py       # Pipeline orchestrator (load → chunk → embed → store)
+│   │   ├── downloader.py              # download files from data_sources.csv
+│   │   ├── loaders.py                 # Extract: LangChain Community document loaders
+│   │   ├── pdf_section_splitter.py    # Section-aware PDF splitter for structured model docs
+│   │   └── processor.py               # Pipeline orchestrator (load → chunk → embed → store)
 │   ├── embedding/
 │   │   └── model.py           # Transform + Load: embed via HuggingFace, upsert to ChromaDB
 │   ├── retrieval/
@@ -34,6 +35,7 @@ rag_stress_testing_v1/
 │   ├── test_downloader.py
 │   ├── test_embedding.py
 │   ├── test_evaluation.py
+│   ├── test_pdf_section_splitter.py
 │   ├── test_retrieval.py
 │   ├── test_generation.py
 │   ├── test_query_logger.py
@@ -320,6 +322,7 @@ graph TD
         BS4["BSHTMLLoader"]
         CL["CSVLoader"]
         PY["PyPDFLoader"]
+        PYSEC["pdf_section_splitter.py<br/>Section-aware splitter<br/>(structured PDFs)"]
         XL["UnstructuredExcelLoader"]
         OL["TextLoader / …"]
     end
@@ -347,12 +350,14 @@ graph TD
     HTML --> BS4
     CSVF --> CL
     PDF --> PY
+    PDF --> PYSEC
     XLSX --> XL
     OTHER --> OL
 
     BS4 --> DOC
     CL --> DOC
-    PY --> DOC
+    PY -->|"unstructured PDFs"| DOC
+    PYSEC -->|"structured PDFs<br/>with section metadata"| DOC
     XL --> DOC
     OL --> DOC
 
@@ -382,6 +387,7 @@ graph TD
 graph BT
     PROC["processor.py<br/><i>orchestrator</i>"]
     LOAD["loaders.py<br/><i>10 LangChain loaders</i>"]
+    PDFSEC["pdf_section_splitter.py<br/><i>section-aware PDF splitter</i>"]
     MODEL["model.py<br/><i>embed + store</i>"]
     DL["downloader.py<br/><i>HTTP fetcher</i>"]
     QUERY["query.py<br/><i>semantic search</i>"]
@@ -398,6 +404,7 @@ graph BT
 
     PROC --> LOAD
     PROC --> MODEL
+    LOAD --> PDFSEC
     LOAD --> LC_COMM
     PROC --> LC_SPLIT
     MODEL --> LC_HF
@@ -414,6 +421,7 @@ graph BT
 
     style PROC fill:none,stroke:#4aed9e
     style LOAD fill:none,stroke:#4a9eed
+    style PDFSEC fill:none,stroke:#4a9eed
     style MODEL fill:none,stroke:#edd74a
     style DL fill:none,stroke:#888
     style QUERY fill:none,stroke:#4aed9e
@@ -544,6 +552,45 @@ graph BT
 - The Streamlit UI now renders tokens word-by-word, giving immediate feedback to the user.
 - The CLI path (`generate_answer()`) still uses `.invoke()` for simplicity since terminal output is buffered anyway.
 
+### ADR-006: Section-Aware PDF Splitting
+
+**Context:** The Federal Reserve's stress test model documentation PDFs (credit risk, market risk, PPNR, aggregation, etc.) are 40–640+ page documents with consistent internal structure: every page carries a header like `Model Documentation: Corporate Model`, top-level sections are lettered (A, B, C, …), and subsections use Roman numerals (i, ii, iii, …). The default `PyPDFLoader` treats each page as an independent document, losing this structural information and producing chunks with no section context.
+
+**Decision:** Implement a **section-aware PDF splitter** (`src/ingestion/pdf_section_splitter.py`) that detects structured PDFs via the `Model Documentation:` header pattern and splits them into one Document per subsection, tagged with `section` and `subsection` metadata.
+
+**Rationale:**
+- **Better retrieval**: Chunks inherit `section` and `subsection` metadata, enabling filtered queries like `where={"section": "Corporate Model"}` or `where={"subsection": "Statement of Purpose"}`.
+- **Semantic coherence**: A subsection like "Statement of Purpose" (2–4 pages) stays together rather than being arbitrarily split across page boundaries.
+- **Automatic detection**: `has_section_headers()` probes the first 10 pages for the header pattern, so `loaders.py` routes structured PDFs to the section splitter and unstructured PDFs to the standard `PyPDFLoader` — no manual configuration needed.
+- **Metadata flow**: Section metadata flows through the existing pipeline (`RecursiveCharacterTextSplitter` preserves metadata → `embed_and_store()` copies it into ChromaDB) with zero changes to downstream code.
+
+**Implementation:**
+
+| Function | Purpose |
+|----------|--------|
+| `has_section_headers(filepath)` | Quick probe: does the PDF have `Model Documentation:` headers? |
+| `load_pdf_by_section(filepath)` | Full splitter: returns `list[Document]` with section/subsection metadata |
+| `_strip_page_header(text)` | Removes the repetitive header line from page content |
+
+**Structure detected:**
+
+```text
+Page header:  "7 Model Documentation: Corporate Model"
+Section:      "A. Corporate Model"      (lettered)
+Subsection:   "i. Statement of Purpose"  (Roman numerals)
+```
+
+**Results on corpus PDFs:**
+
+| PDF | Pages | Section Documents |
+|-----|-------|-------------------|
+| Credit Risk Models | 641 | 24 |
+| Market Risk Models | 296 | 42 |
+| Pre-Provision Net Revenue Models | 255 | 10 |
+| Aggregation Models | 75 | 21 |
+
+9 of 19 corpus PDFs are detected as structured and use the section-aware splitter. The remaining 10 use `PyPDFLoader` as before.
+
 ---
 
 ## Ingestion & Indexing Design
@@ -605,6 +652,8 @@ The project uses a `src` layout, a standard pattern in modern Python packaging:
 #### Loaders (`src/ingestion/loaders.py`) ✅
 
 Implemented via LangChain Community loaders with a strategy-pattern `LOADER_MAP` that maps 10 file extensions to their loader class. `load_directory()` iterates `corpus/raw_data/`, calls `load_file()` per supported file, and returns a flat list of `Document` objects with `.page_content` and `.metadata["source"]`.
+
+For PDF files, `load_file()` first checks `has_section_headers()` — if the PDF has `Model Documentation:` page headers, it uses the section-aware splitter (`pdf_section_splitter.py`) instead of `PyPDFLoader`. This produces Documents tagged with `section`, `subsection`, `start_page`, and `end_page` metadata.
 
 #### Chunking (`src/ingestion/processor.py`) ✅
 

@@ -27,6 +27,8 @@ from langchain_community.document_loaders import (
 from rich.console import Console
 from rich.panel import Panel
 
+from src.ingestion.pdf_section_splitter import has_section_headers, load_pdf_by_section
+
 logger = logging.getLogger(__name__)
 
 # Map file extensions to their LangChain loader class
@@ -78,6 +80,15 @@ def load_file(filepath: str) -> list:
 
     if document_loader is None:
         raise ValueError(f"Unsupported file type: {ext} ({filepath})")
+
+    # For PDFs with structured "Model Documentation:" headers, use the
+    # section-aware splitter so each subsection becomes its own Document
+    # with section/subsection metadata.  This produces much better RAG
+    # chunks than the default one-Document-per-page approach.
+    if ext == ".pdf" and has_section_headers(filepath):
+        logger.info(f"Loading {filepath} with section-aware PDF splitter")
+        docs = load_pdf_by_section(filepath)
+        return docs
 
     logger.info(f"Loading {filepath} with {document_loader.__name__}")
     # e.g. PyPDFLoader(filepath).load() returns a list of Documents, one per page

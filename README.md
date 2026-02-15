@@ -116,6 +116,22 @@ The pipeline will:
 - Enrich metadata from `corpus/metadata.csv` (doc_id, title, author, category, …)
 - Upsert embeddings into the ChromaDB collection named in `config.txt`
 
+### Section-aware PDF splitting
+
+Structured PDFs (e.g. the Fed's credit risk, market risk, and PPNR model documentation) are automatically detected and split by section/subsection instead of by page. Each chunk inherits metadata like `section: Corporate Model` and `subsection: Statement of Purpose`, enabling filtered retrieval:
+
+```python
+from src.retrieval.query import retrieve_formatted
+
+# Filter by section
+results = retrieve_formatted(
+    "loss given default assumptions",
+    where={"section": "Corporate Model"},
+)
+```
+
+Detection is automatic — if a PDF has `Model Documentation:` page headers, the section-aware splitter is used. All other PDFs use the standard per-page loader.
+
 ### Re-ingesting with different settings
 
 To create a second set of embeddings (e.g. larger chunks), just edit `config.txt` and run the pipeline again:
@@ -142,6 +158,7 @@ python corpus/inspect_db.py
 
 | Extension | Loader | Documents produced |
 |-----------|--------|--------------------|
+| `.pdf` (structured) | `pdf_section_splitter` | 1 per subsection (with section/subsection metadata) |
 | `.html` | BSHTMLLoader | 1 per file |
 | `.csv` | CSVLoader | 1 per row |
 | `.pdf` | PyPDFLoader | 1 per page |
@@ -308,9 +325,10 @@ rag_stress_testing/
 │   ├── config.py              # Reads config.txt + .env (via python-dotenv)
 │   ├── utils.py               # RAM-aware embedding model selection
 │   ├── ingestion/
-│   │   ├── downloader.py      # Downloads files from data_sources.csv
-│   │   ├── loaders.py         # File readers (HTML/CSV/PDF/etc.)
-│   │   └── processor.py       # Main ingestion pipeline
+│   │   ├── downloader.py              # Downloads files from data_sources.csv
+│   │   ├── loaders.py                 # File readers (HTML/CSV/PDF/etc.)
+│   │   ├── pdf_section_splitter.py    # Section-aware PDF splitter for structured model docs
+│   │   └── processor.py               # Main ingestion pipeline
 │   ├── embedding/
 │   │   └── model.py           # Embed via HuggingFace, upsert to ChromaDB
 │   ├── retrieval/
@@ -326,6 +344,7 @@ rag_stress_testing/
 │   ├── test_downloader.py
 │   ├── test_embedding.py
 │   ├── test_evaluation.py
+│   ├── test_pdf_section_splitter.py
 │   ├── test_retrieval.py
 │   ├── test_generation.py
 │   ├── test_query_logger.py
@@ -353,6 +372,7 @@ rag_stress_testing/
 - [x] Implement document loaders (HTML, CSV, PDF, Excel, text, Markdown, JSON, Word, PowerPoint)
 - [x] Implement ingestion pipeline (processor.py)
 - [x] Implement text chunking strategy for long docs
+- [x] Section-aware PDF splitting for structured model documentation (credit risk, market risk, PPNR, etc.)
 - [x] Implement metadata extraction (year, document type, source)
 - [x] Set up ChromaDB vector store
 - [x] Generate embeddings (HuggingFace `all-MiniLM-L6-v2`)
@@ -421,4 +441,5 @@ rag_stress_testing/
 - **Chunk Size**: Configurable (default 1000 chars; set to 6000 for richer context)
 - **Overlap**: Configurable (default 100 chars)
 - **Multiple collections**: Each config produces a separate ChromaDB collection — switch instantly by editing `config.txt`
+- **Section-aware splitting**: Structured model documentation PDFs are automatically split by section/subsection before chunking, producing chunks with richer metadata
 

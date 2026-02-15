@@ -393,15 +393,18 @@ The single failure (`test_market_risk_models`) is a pre-existing integration tes
 
 | File | Purpose |
 |------|---------|
+| `src/ingestion/pdf_section_splitter.py` | Section-aware PDF splitter for structured model documentation |
 | `src/evaluation/__init__.py` | Package marker (empty) |
 | `src/evaluation/dataset.py` | 8 curated Q&A pairs for ragas evaluation |
 | `src/evaluation/evaluate.py` | CLI runner: `build_eval_dataset()` + `run_evaluation()` |
+| `tests/test_pdf_section_splitter.py` | 27 unit tests for the section-aware splitter |
 | `tests/test_evaluation.py` | 7 unit tests for the evaluation module |
 
 ### Modified files
 
 | File | Changes |
 |------|---------|
+| `src/ingestion/loaders.py` | Routes structured PDFs to `pdf_section_splitter.py` via `has_section_headers()` probe |
 | `src/generation/llm.py` | LCEL chain (`rag_chain()`, `stream_answer()`, `format_docs()`); `generate_answer()` uses chain internally; `ask()` returns `documents` key |
 | `src/retrieval/query.py` | Added `retrieve_as_documents()` returning `list[Document]` |
 | `app.py` | Replaced threaded timer with `st.write_stream(stream_answer(...))`, removed `threading` import |
