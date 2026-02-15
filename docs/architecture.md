@@ -24,14 +24,19 @@ rag_stress_testing_v1/
 │   ├── retrieval/
 │   │   ├── query.py           # Semantic search: embed query → ANN lookup → ranked results
 │   │   └── query_logger.py    # Log query sessions to logs/
-│   └── generation/
-│       └── llm.py             # Multi-provider LLM factory + RAG generation
+│   ├── generation/
+│   │   └── llm.py             # LCEL chain: RAG_PROMPT | llm | StrOutputParser()
+│   └── evaluation/
+│       ├── dataset.py         # Curated Q&A pairs for ragas evaluation
+│       └── evaluate.py        # CLI runner: ragas metrics + CSV export
 ├── tests/
 │   ├── test_config.py
 │   ├── test_downloader.py
 │   ├── test_embedding.py
+│   ├── test_evaluation.py
 │   ├── test_retrieval.py
 │   ├── test_generation.py
+│   ├── test_query_logger.py
 │   └── test_utils.py
 ├── docs/
 │   └── architecture.md
@@ -82,22 +87,32 @@ graph LR
     end
 
     subgraph Phase4["Phase 4 — Generate"]
-        PROMPT["llm.py<br/>build_prompt()"]
+        CHAIN["llm.py<br/>rag_chain()"]
         LLM["get_llm()<br/>ollama / openai / anthropic / google"]
+        LCEL["LCEL chain<br/>RAG_PROMPT | llm | StrOutputParser()"]
         ANSWER["Grounded answer<br/>with source citations"]
 
-        PROMPT --> LLM --> ANSWER
+        CHAIN --> LLM --> LCEL --> ANSWER
+    end
+
+    subgraph Phase5["Phase 5 — Evaluate"]
+        EVAL["evaluate.py<br/>run_evaluation()"]
+        DATASET["dataset.py<br/>EVAL_QUESTIONS"]
+        RAGAS["ragas<br/>Faithfulness · Relevancy<br/>Context Recall · Factual"]
+
+        DATASET --> EVAL --> RAGAS
     end
 
     RAW --> LOAD
     META --> EMBED
     CHROMA --> ANN
-    ANN --> PROMPT
+    ANN --> CHAIN
 
     style Phase1 fill:none,stroke:#555
     style Phase2 fill:none,stroke:#555
     style Phase3 fill:none,stroke:#555
     style Phase4 fill:none,stroke:#555
+    style Phase5 fill:none,stroke:#555
     style Extract fill:none,stroke:#4a9eed
     style Transform fill:none,stroke:#4aed9e
     style Load fill:none,stroke:#ed4a9e
@@ -124,7 +139,7 @@ sequenceDiagram
     participant CHROMA as 🛢 ChromaDB<br/>stress_test_docs_*
     participant QUERY as query.py<br/>retrieve()
     participant LLM as llm.py<br/>ask()
-    participant OLLAMA as get_llm()<br/>ollama / openai /<br/>anthropic / google
+    participant OLLAMA as rag_chain()<br/>RAG_PROMPT | llm |<br/>StrOutputParser()
 
     rect rgba(0, 0, 0, 0)
         Note over DL,FS: Phase 1 — Acquire
@@ -181,14 +196,17 @@ sequenceDiagram
     end
 
     rect rgba(0, 0, 0, 0)
-        Note over LLM,OLLAMA: Phase 4 — Generate
+        Note over LLM,OLLAMA: Phase 4 — Generate (LCEL chain)
         User ->> LLM: ask("What is the peak unemployment rate?")
         LLM ->> QUERY: retrieve_formatted(query, n_results=k)
         QUERY -->> LLM: list[dict] (retrieved chunks)
-        LLM ->> LLM: build_prompt(query, chunks)<br/>CONTEXT + QUESTION + ANSWER template
-        LLM ->> OLLAMA: invoke([system_prompt, human_prompt])
-        OLLAMA -->> LLM: grounded answer with source citations
-        LLM -->> User: {query, answer, chunks, model}
+        LLM ->> QUERY: retrieve_as_documents(query, n_results=k)
+        QUERY -->> LLM: list[Document] (with metadata)
+        LLM ->> OLLAMA: rag_chain(docs, provider, model)
+        Note over OLLAMA: RAG_PROMPT | llm | StrOutputParser()
+        LLM ->> OLLAMA: chain.invoke({context, question})
+        OLLAMA -->> LLM: grounded answer string
+        LLM -->> User: {query, answer, chunks, documents, model}
     end
 ```
 
@@ -210,8 +228,8 @@ sequenceDiagram
     participant CHROMA as 🛢 ChromaDB<br/>collection.query()
     participant GEN as query.py<br/>_generate_and_print_answer()
     participant LLM as llm.py<br/>generate_answer()
-    participant PROMPT as llm.py<br/>build_prompt()
-    participant OLLAMA as get_llm()<br/>ollama / openai /<br/>anthropic / google
+    participant CHAIN as llm.py<br/>rag_chain()
+    participant OLLAMA as LCEL chain<br/>RAG_PROMPT | llm |<br/>StrOutputParser()
     participant LOG as query_logger.py<br/>log_query_session()
 
     Note over User,CLI: User runs: python -m src.retrieval.query "question" --answer
@@ -248,22 +266,22 @@ sequenceDiagram
 
     %% ── Generation ──
     rect rgba(0, 0, 0, 0)
-        Note over GEN,OLLAMA: Generation — LLM grounded answer
+        Note over GEN,OLLAMA: Generation — LCEL chain grounded answer
         CLI ->> GEN: _generate_and_print_answer(query, chunks, model)
         GEN ->> LLM: generate_answer(query, chunks)
-        LLM ->> PROMPT: build_prompt(query, chunks)
+        LLM ->> CHAIN: rag_chain(docs, provider, model)
+        CHAIN ->> CHAIN: RAG_PROMPT | get_llm() | StrOutputParser()
+        CHAIN -->> LLM: Runnable chain
+
+        LLM ->> OLLAMA: chain.invoke({context, question})
 
         loop Each retrieved chunk
-            PROMPT ->> PROMPT: format: [Source: title | path]<br/>chunk_text
+            OLLAMA ->> OLLAMA: format_docs() →<br/>[Source: title | path]\nchunk_text
         end
-        PROMPT ->> PROMPT: assemble CONTEXT + QUESTION + ANSWER template
-        PROMPT -->> LLM: prompt string
 
-        LLM ->> OLLAMA: invoke([<br/>  ("system", SYSTEM_PROMPT),<br/>  ("human", prompt)<br/>])
-
-        Note over OLLAMA: Local inference<br/>(temp=0.1)
+        Note over OLLAMA: LLM inference<br/>(temp=0.1)
         OLLAMA ->> OLLAMA: decode tokens
-        OLLAMA -->> LLM: response.content
+        OLLAMA -->> LLM: answer string
         LLM -->> GEN: answer string
         GEN ->> GEN: print answer in Rich Panel
 
@@ -367,13 +385,16 @@ graph BT
     MODEL["model.py<br/><i>embed + store</i>"]
     DL["downloader.py<br/><i>HTTP fetcher</i>"]
     QUERY["query.py<br/><i>semantic search</i>"]
-    GEN["llm.py<br/><i>multi-provider RAG</i>"]
+    GEN["llm.py<br/><i>LCEL chain RAG</i>"]
+    EVAL["evaluate.py<br/><i>ragas metrics</i>"]
 
     LC_SPLIT["langchain-text-splitters"]
     LC_COMM["langchain-community"]
     LC_HF["langchain-huggingface"]
     LC_OL["langchain-ollama<br/>langchain-openai<br/>langchain-anthropic<br/>langchain-google-genai"]
+    LC_CORE["langchain-core<br/>LCEL · StrOutputParser<br/>ChatPromptTemplate"]
     CHROMA["chromadb"]
+    RAGAS["ragas<br/>Faithfulness · Relevancy<br/>Context Recall · Factual"]
 
     PROC --> LOAD
     PROC --> MODEL
@@ -384,6 +405,10 @@ graph BT
     QUERY --> MODEL
     GEN --> QUERY
     GEN --> LC_OL
+    GEN --> LC_CORE
+    EVAL --> GEN
+    EVAL --> QUERY
+    EVAL --> RAGAS
     DL --> META_CSV["corpus/metadata.csv"]
     MODEL --> META_CSV
 
@@ -393,6 +418,7 @@ graph BT
     style DL fill:none,stroke:#888
     style QUERY fill:none,stroke:#4aed9e
     style GEN fill:none,stroke:#ed4aed
+    style EVAL fill:none,stroke:#ed4a4a
 ```
 
 ---
@@ -457,7 +483,66 @@ graph BT
 
 **Decision:** Default to **Ollama** for local inference; support **OpenAI**, **Anthropic**, and **Google Gemini** as remote alternatives. The provider is configured in `config.txt` (`llm_provider`) and API keys are loaded from `.env` via `python-dotenv`.
 
-**Rationale:** Ollama runs fully offline — no API keys, no cloud costs, no data leakage. For users with weaker hardware, remote providers offer access to larger models without local GPU requirements. The `get_llm()` factory in `llm.py` lazily imports only the needed provider package, so unused providers add zero overhead. Each provider’s LangChain integration (`langchain-openai`, `langchain-anthropic`, `langchain-google-genai`) is an optional dependency installed only when needed.
+**Rationale:** Ollama runs fully offline — no API keys, no cloud costs, no data leakage. For users with weaker hardware, remote providers offer access to larger models without local GPU requirements. The `get_llm()` factory in `llm.py` lazily imports only the needed provider package, so unused providers add zero overhead. Each provider's LangChain integration (`langchain-openai`, `langchain-anthropic`, `langchain-google-genai`) is an optional dependency installed only when needed.
+
+### ADR-002: LCEL Chain Architecture
+
+**Context:** The original generation pipeline manually assembled prompt strings and called `llm.invoke()` directly. This made streaming difficult and tightly coupled prompt construction with LLM invocation.
+
+**Decision:** Rewrite the generation pipeline using **LangChain Expression Language (LCEL)**.
+
+**Rationale:**
+- **Composability**: The chain `RAG_PROMPT | llm | StrOutputParser()` is declarative and modular — each component can be swapped independently.
+- **Native streaming**: LCEL chains expose `.stream()` out of the box, enabling token-by-token output in the Streamlit UI via `st.write_stream()`.
+- **LangSmith integration**: LCEL chains are automatically traced when `LANGCHAIN_TRACING_V2=true`, providing full observability with zero code changes.
+- **Testability**: The `rag_chain()` factory function returns the full chain, making it easy to mock in tests without dealing with `MagicMock` pydantic validation issues.
+
+**Implementation:**
+- `rag_chain(docs, provider, model)` builds and returns the full LCEL chain
+- `generate_answer()` calls `chain.invoke()` for synchronous generation
+- `stream_answer()` yields from `chain.stream()` for token-by-token output
+- `format_docs()` converts `list[Document]` into the context string expected by the prompt
+
+### ADR-003: ragas Evaluation Framework
+
+**Context:** Need to measure RAG quality systematically rather than relying on manual inspection.
+
+**Decision:** Use **ragas** (v0.4.x) for automated evaluation.
+
+**Rationale:**
+- Purpose-built for RAG evaluation with metrics that cover both retrieval and generation quality.
+- Integrates natively with LangChain via `LangchainLLMWrapper`.
+- Uses the same LLM provider configured in the project — no separate evaluation infrastructure needed.
+
+**Metrics:**
+| Metric | Module | What it measures |
+|--------|--------|-----------------|
+| Faithfulness | `ragas.metrics._faithfulness` | Is the answer grounded in retrieved context? |
+| ResponseRelevancy | `ragas.metrics._answer_relevance` | Does the answer address the question? |
+| LLMContextRecall | `ragas.metrics._context_recall` | Did retrieval find the needed information? |
+| FactualCorrectness | `ragas.metrics._factual_correctness` | Does the answer match the ground truth? |
+
+**Dataset:** 8 curated Q&A pairs in `src/evaluation/dataset.py` covering stress testing topics.
+
+### ADR-004: LangSmith Observability
+
+**Context:** Debugging LLM chains requires visibility into prompt construction, token usage, and latency at each step.
+
+**Decision:** Support **LangSmith** tracing via environment variables (zero-config).
+
+**Rationale:** `langsmith` is already installed as a transitive dependency of `langchain-core`. LCEL chains are automatically traced when `LANGCHAIN_TRACING_V2=true` is set — no code instrumentation required. This provides full input/output traces, latency breakdowns, and token counts in the LangSmith dashboard.
+
+### ADR-005: Token-by-Token Streaming
+
+**Context:** Local LLM inference (Ollama) can take 30+ seconds. Showing a spinner with no output is a poor user experience.
+
+**Decision:** Stream tokens to the Streamlit UI as they are generated.
+
+**Rationale:**
+- LCEL's `.stream()` method yields tokens as they are produced by the LLM.
+- `stream_answer()` is a generator that yields string chunks, compatible with `st.write_stream()`.
+- The Streamlit UI now renders tokens word-by-word, giving immediate feedback to the user.
+- The CLI path (`generate_answer()`) still uses `.invoke()` for simplicity since terminal output is buffered anyway.
 
 ---
 

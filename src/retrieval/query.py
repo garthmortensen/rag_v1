@@ -5,31 +5,20 @@ at ingestion time, then performs approximate nearest-neighbor (ANN)
 search against the ChromaDB collection to return the most relevant
 document chunks.
 
-Optionally generates a grounded answer via a local Ollama LLM when
-the ``--answer`` flag is provided.
+Usage (programmatic)::
 
-Usage (CLI):
-    python -m src.retrieval.query "What is the peak unemployment rate?"
-    python -m src.retrieval.query "CET1 capital ratio" --top-k 10
-    python -m src.retrieval.query "credit risk" --filter source_type=pdf
-    python -m src.retrieval.query "What is CCAR?" --answer
-    python -m src.retrieval.query "capital ratios" --answer --model phi3
+    from src.retrieval.query import retrieve_formatted
+    chunks = retrieve_formatted("What is the peak unemployment rate?")
 """
 
-import argparse
 import logging
-import sys
 
-from rich.console import Console
-from rich.panel import Panel
-
-from src.config import CFG, print_config
+from src.config import CFG
 from src.embedding.model import (
     get_embedding_function,
     get_or_create_collection,
     VECTOR_DB_DIR,
 )
-from src.retrieval.query_logger import log_query_session
 
 # Derive from config so queries hit the same collection that was ingested
 COLLECTION_NAME = str(CFG["collection_name"])
@@ -158,199 +147,3 @@ def retrieve_formatted(
         f"'{query[:60]}{'…' if len(query) > 60 else ''}'"
     )
     return formatted
-
-console = Console()
-
-def print_ascii_banner():
-    console.print(
-        Panel.fit(
-            """[bold medium_purple1]
-            ,/   *
-         _,'/_   |
-         `(")' ,'/   QUERY
-      _ _,-H-./ /    INTERFACE
-      \_\_\.   /
-        )" |  (
-     __/   H   \__
-     \    /|\    /
-      `--'|||`--'
-         ==^==
-[/bold medium_purple1]
---------------------------------
-""",
-            border_style="grey39",
-        )
-    )
-
-
-def _parse_filter(raw: str) -> dict:
-    """Parse 'key=value' into a ChromaDB where-filter dict.
-
-    Supports a single key=value pair.  Raises ValueError on bad
-    syntax.
-
-    >>> _parse_filter("source_type=pdf")
-    {'source_type': 'pdf'}
-    """
-    if "=" not in raw:
-        raise ValueError(
-            f"Filter must be key=value (got '{raw}'). "
-            "Example: --filter source_type=pdf"
-        )
-    key, value = raw.split("=", 1)
-    return {key.strip(): value.strip()}
-
-
-def _print_results(results: list[dict]) -> None:
-    """Pretty-print formatted retrieval results to stdout."""
-    if not results:
-        print("No results found.")
-        return
-
-    for r in results:
-        title = r["metadata"].get("title", "—")
-        source = r["metadata"].get("source", "—")
-
-        print(f"\n{'─' * 72}")
-        print(f"  Rank {r['rank']}  │  distance: {r['distance']:.4f}")
-        print(f"  ID:     {r['id']}")
-        print(f"  Title:  {title}")
-        print(f"  Source: {source}")
-        print(f"  Text:   {r['text']}")
-
-    print(f"\n{'─' * 72}")
-    print(f"  {len(results)} result(s) returned.\n")
-
-
-def _generate_and_print_answer(
-    query: str,
-    chunks: list[dict],
-    model: str | None = None,
-    provider: str | None = None,
-) -> str | None:
-    """Call the generation module and pretty-print the LLM answer.
-
-    Handles import errors (provider package not installed) and
-    connection errors (server not running) gracefully.
-
-    Returns the answer text, or None if generation failed.
-    """
-    try:
-        from src.generation.llm import (
-            generate_answer,
-            DEFAULT_MODEL,
-            DEFAULT_PROVIDER,
-        )
-    except ImportError:
-        console.print(
-            "\n[bold red]Error:[/bold red] langchain-ollama is not installed.\n"
-            "  Run: [bold]uv add langchain-ollama[/bold]\n"
-        )
-        return None
-
-    model_name = model or DEFAULT_MODEL
-    provider_name = provider or DEFAULT_PROVIDER
-    console.print(
-        f"\n[bold cyan]Generating answer with {provider_name}/{model_name}…[/bold cyan]\n"
-    )
-
-    try:
-        answer = generate_answer(
-            query, chunks, model=model_name, provider=provider_name,
-        )
-    except ConnectionError as exc:
-        console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
-        return None
-    except ImportError as exc:
-        console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
-        return None
-    except Exception as exc:
-        console.print(
-            f"\n[bold red]Generation failed:[/bold red] {exc}\n"
-        )
-        return None
-
-    console.print(
-        Panel(
-            answer,
-            title="[bold green]Answer[/bold green]",
-            border_style="green",
-            padding=(1, 2),
-        )
-    )
-
-    # Audible alert so the user doesn't have to watch the screen
-    if CFG.get("beep_on_answer", True):
-        print("\a", end="", flush=True)
-
-    return answer
-
-
-def main(argv: list[str] | None = None) -> None:
-    """CLI entry point for interactive retrieval queries."""
-    parser = argparse.ArgumentParser(
-        prog="python -m src.retrieval.query",
-        description="Query the stress-testing vector DB.",
-    )
-    parser.add_argument("query", help="Natural-language query string")
-    parser.add_argument(
-        "--top-k",
-        type=int,
-        default=DEFAULT_TOP_K,
-        help=f"Number of results to return (default: {DEFAULT_TOP_K})",
-    )
-    parser.add_argument(
-        "--filter",
-        type=str,
-        default=None,
-        help="Metadata filter as key=value (e.g. source_type=pdf)",
-    )
-    parser.add_argument(
-        "--answer",
-        action="store_true",
-        default=False,
-        help="Generate an LLM answer from retrieved chunks (requires Ollama)",
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        default=None,
-        help="LLM model name (default: from config.txt)",
-    )
-    parser.add_argument(
-        "--provider",
-        type=str,
-        default=None,
-        help="LLM provider: ollama, openai, anthropic, google (default: from config.txt)",
-    )
-
-    args = parser.parse_args(argv)
-
-    print_ascii_banner()
-    print_config()
-
-    where = _parse_filter(args.filter) if args.filter else None
-    results = retrieve_formatted(args.query, n_results=args.top_k, where=where)
-    _print_results(results)
-
-    answer = None
-    if args.answer:
-        answer = _generate_and_print_answer(
-            args.query, results, model=args.model, provider=args.provider,
-        )
-
-    # Log the full session to logs/
-    log_query_session(
-        query=args.query,
-        results=results,
-        answer=answer,
-        collection_name=COLLECTION_NAME,
-    )
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
-    )
-    main()

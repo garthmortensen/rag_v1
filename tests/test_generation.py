@@ -15,11 +15,11 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.generation.llm import (
-    build_prompt,
     format_context,
     generate_answer,
     get_llm,
-    ask,
+    rag_chain,
+    stream_answer,
     RAG_PROMPT,
     SYSTEM_PROMPT,
     DEFAULT_MODEL,
@@ -102,58 +102,6 @@ class TestRAGPrompt(unittest.TestCase):
         self.assertIn("Q_VALUE", messages[1].content)
 
 
-class TestBuildPrompt(unittest.TestCase):
-    """Tests for the prompt builder."""
-
-    def test_contains_query(self):
-        """The prompt includes the user's question."""
-        prompt = build_prompt("What is CET1?", _fake_chunks())
-        self.assertIn("What is CET1?", prompt)
-
-    def test_contains_chunk_text(self):
-        """Each chunk's text appears in the prompt."""
-        chunks = _fake_chunks(3)
-        prompt = build_prompt("query", chunks)
-        for chunk in chunks:
-            self.assertIn(chunk["text"], prompt)
-
-    def test_contains_source_metadata(self):
-        """Each chunk's title and source appear in the prompt."""
-        chunks = _fake_chunks(2)
-        prompt = build_prompt("query", chunks)
-        for chunk in chunks:
-            self.assertIn(chunk["metadata"]["title"], prompt)
-            self.assertIn(chunk["metadata"]["source"], prompt)
-
-    def test_has_context_and_question_sections(self):
-        """The prompt has CONTEXT, QUESTION, and ANSWER labels."""
-        prompt = build_prompt("query", _fake_chunks(1))
-        self.assertIn("CONTEXT:", prompt)
-        self.assertIn("QUESTION:", prompt)
-        self.assertIn("ANSWER:", prompt)
-
-    def test_empty_chunks(self):
-        """Prompt still works with zero chunks."""
-        prompt = build_prompt("something", [])
-        self.assertIn("CONTEXT:", prompt)
-        self.assertIn("something", prompt)
-
-    def test_missing_metadata_keys(self):
-        """Handles chunks whose metadata lacks title/source."""
-        chunks = [
-            {
-                "rank": 1,
-                "id": "x",
-                "distance": 0.1,
-                "text": "some text",
-                "metadata": {},
-            }
-        ]
-        prompt = build_prompt("q", chunks)
-        self.assertIn("Unknown", prompt)
-        self.assertIn("some text", prompt)
-
-
 # ── get_llm tests ──────────────────────────────────────────────────
 
 
@@ -184,170 +132,173 @@ class TestGetLLM(unittest.TestCase):
 
 
 class TestGenerateAnswer(unittest.TestCase):
-    """Tests for the LLM generation wrapper."""
+    """Tests for the LLM generation wrapper (uses LCEL chain)."""
 
-    @patch("src.generation.llm.get_llm")
-    def test_returns_answer_text(self, mock_get_llm):
-        """generate_answer() returns the model's response content."""
-        mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content="The answer is 42.")
-        mock_get_llm.return_value = mock_llm
+    @patch("src.generation.llm.rag_chain")
+    def test_returns_answer_text(self, mock_rag_chain):
+        """generate_answer() returns the chain's output."""
+        mock_runnable = MagicMock()
+        mock_runnable.invoke.return_value = "The answer is 42."
+        mock_rag_chain.return_value = mock_runnable
 
         answer = generate_answer("question", _fake_chunks())
         self.assertEqual(answer, "The answer is 42.")
 
-    @patch("src.generation.llm.get_llm")
-    def test_passes_system_and_human_messages(self, mock_get_llm):
-        """The LLM receives a system message and a human message
-        via ChatPromptTemplate.format_messages()."""
-        mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content="ok")
-        mock_get_llm.return_value = mock_llm
-
-        generate_answer("question", _fake_chunks())
-        messages = mock_llm.invoke.call_args[0][0]
+    def test_chain_receives_system_and_human_messages(self):
+        """The RAG_PROMPT formats system + human messages correctly."""
+        # Test the prompt template directly (no LLM needed)
+        messages = RAG_PROMPT.format_messages(
+            context="some context", question="some question",
+        )
         self.assertEqual(len(messages), 2)
-        # ChatPromptTemplate produces BaseMessage objects, not tuples
         self.assertEqual(messages[0].type, "system")
         self.assertIn("precise research assistant", messages[0].content)
         self.assertEqual(messages[1].type, "human")
         self.assertIn("CONTEXT:", messages[1].content)
         self.assertIn("QUESTION:", messages[1].content)
 
-    @patch("src.generation.llm.get_llm")
-    def test_connection_error_raised(self, mock_get_llm):
+    @patch("src.generation.llm.rag_chain")
+    def test_connection_error_raised(self, mock_rag_chain):
         """A ConnectionError is raised when the LLM server is unreachable."""
-        mock_llm = MagicMock()
-        mock_llm.invoke.side_effect = Exception("Connection refused")
-        mock_get_llm.return_value = mock_llm
+        mock_runnable = MagicMock()
+        mock_runnable.invoke.side_effect = Exception("Connection refused")
+        mock_rag_chain.return_value = mock_runnable
 
         with self.assertRaises(ConnectionError) as ctx:
             generate_answer("question", _fake_chunks())
         self.assertIn("provider", str(ctx.exception).lower())
 
-    @patch("src.generation.llm.get_llm")
-    def test_non_connection_error_propagated(self, mock_get_llm):
+    @patch("src.generation.llm.rag_chain")
+    def test_non_connection_error_propagated(self, mock_rag_chain):
         """Non-connection errors propagate unchanged."""
-        mock_llm = MagicMock()
-        mock_llm.invoke.side_effect = ValueError("bad input")
-        mock_get_llm.return_value = mock_llm
+        mock_runnable = MagicMock()
+        mock_runnable.invoke.side_effect = ValueError("bad input")
+        mock_rag_chain.return_value = mock_runnable
 
         with self.assertRaises(ValueError):
             generate_answer("question", _fake_chunks())
 
-    @patch("src.generation.llm.get_llm")
-    def test_custom_model_forwarded(self, mock_get_llm):
-        """generate_answer() passes the model name to get_llm()."""
-        mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content="ok")
-        mock_get_llm.return_value = mock_llm
+    @patch("src.generation.llm.rag_chain")
+    def test_custom_model_forwarded(self, mock_rag_chain):
+        """generate_answer() passes the model name to rag_chain()."""
+        mock_runnable = MagicMock()
+        mock_runnable.invoke.return_value = "ok"
+        mock_rag_chain.return_value = mock_runnable
 
         generate_answer("q", _fake_chunks(), model="phi3")
-        mock_get_llm.assert_called_once_with(
+        mock_rag_chain.assert_called_once_with(
             model="phi3",
             temperature=DEFAULT_TEMPERATURE,
             provider=DEFAULT_PROVIDER,
         )
 
+    @patch("src.generation.llm.rag_chain")
+    def test_invoke_receives_context_and_question(self, mock_rag_chain):
+        """The chain is invoked with context and question keys."""
+        mock_runnable = MagicMock()
+        mock_runnable.invoke.return_value = "answer"
+        mock_rag_chain.return_value = mock_runnable
+
+        generate_answer("What is CET1?", _fake_chunks())
+        call_args = mock_runnable.invoke.call_args[0][0]
+        self.assertIn("context", call_args)
+        self.assertIn("question", call_args)
+        self.assertEqual(call_args["question"], "What is CET1?")
+
 
 # ── ask() tests ─────────────────────────────────────────────────────
-
-
-class TestAsk(unittest.TestCase):
-    """Tests for the end-to-end ask() convenience wrapper."""
-
-    @patch("src.generation.llm.generate_answer")
-    @patch("src.generation.llm.retrieve_formatted", create=True)
-    def test_returns_dict_shape(self, mock_retrieve, mock_generate):
-        """ask() returns a dict with query, answer, chunks, model."""
-        # Patch the lazy imports inside ask()
-        with patch(
-            "src.retrieval.query.retrieve_formatted",
-            return_value=_fake_chunks(2),
-        ), patch(
-            "src.generation.llm.generate_answer",
-            return_value="The answer.",
-        ):
-            result = ask("test query")
-
-        self.assertIn("query", result)
-        self.assertIn("answer", result)
-        self.assertIn("chunks", result)
-        self.assertIn("model", result)
-        self.assertIn("provider", result)
-        self.assertEqual(result["query"], "test query")
-        self.assertEqual(result["answer"], "The answer.")
-        self.assertEqual(result["model"], DEFAULT_MODEL)
-        self.assertEqual(result["provider"], DEFAULT_PROVIDER)
-
-    @patch("src.generation.llm.generate_answer", return_value="ans")
-    def test_passes_n_results(self, mock_generate):
-        """ask() forwards n_results to retrieve_formatted."""
-        with patch(
-            "src.retrieval.query.retrieve_formatted",
-            return_value=_fake_chunks(3),
-        ) as mock_retrieve:
-            ask("q", n_results=10)
-        mock_retrieve.assert_called_once()
-        _, kwargs = mock_retrieve.call_args
-        self.assertEqual(kwargs["n_results"], 10)
-
-    @patch("src.generation.llm.generate_answer", return_value="ans")
-    def test_passes_where_filter(self, mock_generate):
-        """ask() forwards the where filter to retrieve_formatted."""
-        where = {"source_type": "pdf"}
-        with patch(
-            "src.retrieval.query.retrieve_formatted",
-            return_value=_fake_chunks(1),
-        ) as mock_retrieve:
-            ask("q", where=where)
-        _, kwargs = mock_retrieve.call_args
-        self.assertEqual(kwargs["where"], where)
 
 
 # ── CLI --answer flag tests ─────────────────────────────────────────
 
 
-class TestCLIAnswerFlag(unittest.TestCase):
-    """Tests for the --answer flag in query.py's CLI."""
+# ── format_docs tests ──────────────────────────────────────────────
 
-    @patch("src.retrieval.query._generate_and_print_answer")
-    @patch("src.retrieval.query.retrieve_formatted", return_value=[])
-    @patch("src.retrieval.query.print_ascii_banner")
-    def test_answer_flag_calls_generate(
-        self, mock_banner, mock_retrieve, mock_gen
-    ):
-        """--answer triggers _generate_and_print_answer()."""
-        from src.retrieval.query import main
 
-        main(["test query", "--answer"])
-        mock_gen.assert_called_once()
+# ── rag_chain tests ─────────────────────────────────────────────────
 
-    @patch("src.retrieval.query._generate_and_print_answer")
-    @patch("src.retrieval.query.retrieve_formatted", return_value=[])
-    @patch("src.retrieval.query.print_ascii_banner")
-    def test_no_answer_flag_skips_generate(
-        self, mock_banner, mock_retrieve, mock_gen
-    ):
-        """Without --answer, _generate_and_print_answer() is not called."""
-        from src.retrieval.query import main
 
-        main(["test query"])
-        mock_gen.assert_not_called()
+class TestRagChain(unittest.TestCase):
+    """Tests for the LCEL chain builder."""
 
-    @patch("src.retrieval.query._generate_and_print_answer")
-    @patch("src.retrieval.query.retrieve_formatted", return_value=[])
-    @patch("src.retrieval.query.print_ascii_banner")
-    def test_model_flag_forwarded(
-        self, mock_banner, mock_retrieve, mock_gen
-    ):
-        """--model is forwarded to _generate_and_print_answer()."""
-        from src.retrieval.query import main
+    @patch("src.generation.llm.get_llm")
+    def test_chain_is_runnable(self, mock_get_llm):
+        """rag_chain() returns an object with .invoke() and .stream() methods."""
+        from langchain_core.messages import AIMessage
 
-        main(["test query", "--answer", "--model", "phi3"])
-        mock_gen.assert_called_once()
-        _, kwargs = mock_gen.call_args
-        self.assertEqual(kwargs.get("model") or mock_gen.call_args[0][2], "phi3")
+        mock_llm = MagicMock()
+        mock_llm.invoke.return_value = AIMessage(content="test")
+        # The | operator needs the mock to behave like a Runnable
+        mock_get_llm.return_value = mock_llm
+
+        chain = rag_chain()
+        self.assertTrue(hasattr(chain, "invoke"))
+        self.assertTrue(hasattr(chain, "stream"))
+
+    @patch("src.generation.llm.rag_chain")
+    def test_chain_invoke_returns_string(self, mock_rag_chain_fn):
+        """generate_answer() returns a string via the LCEL chain."""
+        mock_runnable = MagicMock()
+        mock_runnable.invoke.return_value = "The answer."
+        mock_rag_chain_fn.return_value = mock_runnable
+
+        result = generate_answer("q?", _fake_chunks())
+        self.assertIsInstance(result, str)
+        self.assertEqual(result, "The answer.")
+
+    @patch("src.generation.llm.get_llm")
+    def test_chain_passes_provider(self, mock_get_llm):
+        """rag_chain() forwards provider to get_llm()."""
+        mock_llm = MagicMock()
+        mock_get_llm.return_value = mock_llm
+
+        rag_chain(provider="openai", model="gpt-4o")
+        mock_get_llm.assert_called_once_with(
+            model="gpt-4o",
+            temperature=DEFAULT_TEMPERATURE,
+            provider="openai",
+        )
+
+
+# ── stream_answer tests ────────────────────────────────────────────
+
+
+class TestStreamAnswer(unittest.TestCase):
+    """Tests for the streaming answer generator."""
+
+    @patch("src.generation.llm.rag_chain")
+    def test_yields_tokens(self, mock_rag_chain):
+        """stream_answer() yields string tokens from the chain."""
+        mock_runnable = MagicMock()
+        mock_runnable.stream.return_value = iter(["Hello", " world"])
+        mock_rag_chain.return_value = mock_runnable
+
+        tokens = list(stream_answer("question", _fake_chunks()))
+        self.assertEqual(tokens, ["Hello", " world"])
+
+    @patch("src.generation.llm.rag_chain")
+    def test_stream_is_iterator(self, mock_rag_chain):
+        """stream_answer() returns an iterator."""
+        mock_runnable = MagicMock()
+        mock_runnable.stream.return_value = iter([])
+        mock_rag_chain.return_value = mock_runnable
+
+        result = stream_answer("q", _fake_chunks())
+        self.assertTrue(hasattr(result, "__iter__"))
+        self.assertTrue(hasattr(result, "__next__"))
+
+    @patch("src.generation.llm.rag_chain")
+    def test_stream_passes_context_and_question(self, mock_rag_chain):
+        """stream_answer() passes context and question to chain.stream()."""
+        mock_runnable = MagicMock()
+        mock_runnable.stream.return_value = iter(["ans"])
+        mock_rag_chain.return_value = mock_runnable
+
+        list(stream_answer("What is CET1?", _fake_chunks()))
+        call_args = mock_runnable.stream.call_args[0][0]
+        self.assertIn("context", call_args)
+        self.assertIn("question", call_args)
+        self.assertEqual(call_args["question"], "What is CET1?")
 
 
 if __name__ == "__main__":

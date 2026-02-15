@@ -35,6 +35,11 @@ def log_query_session(
     answer: str | None = None,
     collection_name: str = "",
     logs_dir: str = LOGS_DIR,
+    query_time: datetime | None = None,
+    response_time: datetime | None = None,
+    elapsed_seconds: float | None = None,
+    provider: str | None = None,
+    model: str | None = None,
 ) -> str:
     """Write a complete query session to a log file.
 
@@ -46,11 +51,21 @@ def log_query_session(
         Output of ``retrieve_formatted()`` — each dict has keys
         ``rank``, ``id``, ``distance``, ``text``, ``metadata``.
     answer : str | None
-        The LLM-generated answer, if ``--answer`` was used.
+        The LLM-generated answer, if any.
     collection_name : str
         The ChromaDB collection that was queried.
     logs_dir : str
         Directory to write log files into.
+    query_time : datetime | None
+        When the question was submitted.
+    response_time : datetime | None
+        When the answer was completed.
+    elapsed_seconds : float | None
+        Wall-clock seconds for generation.
+    provider : str | None
+        LLM provider used (ollama, openai, etc.).
+    model : str | None
+        LLM model name used.
 
     Returns
     -------
@@ -76,8 +91,18 @@ def log_query_session(
         fh.write(f"Timestamp:  {now.isoformat()}\n")
         if collection_name:
             fh.write(f"Collection: {collection_name}\n")
+        if provider:
+            fh.write(f"Provider:   {provider}\n")
+        if model:
+            fh.write(f"Model:      {model}\n")
         fh.write(f"Query:      {query}\n")
         fh.write(f"Results:    {len(results)}\n")
+        if query_time:
+            fh.write(f"Asked at:   {query_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        if response_time:
+            fh.write(f"Answered:   {response_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        if elapsed_seconds is not None:
+            fh.write(f"Elapsed:    {elapsed_seconds:.1f}s\n")
         fh.write(f"{separator}\n\n")
 
         # ── Retrieved chunks ────────────────────────────────────────

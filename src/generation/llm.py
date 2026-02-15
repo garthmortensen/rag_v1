@@ -1,8 +1,11 @@
 """LLM-powered answer generation over retrieved document chunks.
 
-Uses a configurable LLM provider to produce grounded answers from
-the top-k chunks returned by the retrieval module.  The prompt
-instructs the model to cite sources and acknowledge uncertainty.
+Built around a **LangChain LCEL chain** that composes:
+
+    prompt → llm → output parser
+
+The chain can be used standalone or via the convenience wrappers
+:func:`generate_answer` and :func:`stream_answer`.
 
 Supported providers (set ``llm_provider`` in config.txt):
 
@@ -14,14 +17,22 @@ Supported providers (set ``llm_provider`` in config.txt):
 API keys are loaded from a ``.env`` file at the project root via
 python-dotenv (see ``.env.example``).
 
-Usage (programmatic):
-    from src.generation.llm import ask
-    answer = ask("What is the peak unemployment rate?")
+If ``LANGCHAIN_TRACING_V2=true`` and ``LANGCHAIN_API_KEY`` are set
+in ``.env``, every call is automatically traced to LangSmith — no
+code changes required.
+
+Usage (programmatic)::
+
+    from src.generation.llm import rag_chain, stream_answer
+    chain  = rag_chain()                    # reusable LCEL chain
+    answer = chain.invoke({"context": "...", "question": "..."})
 """
 
 import logging
 import textwrap
+from collections.abc import Iterator
 
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 
@@ -41,6 +52,14 @@ PROVIDER_DEFAULTS: dict[str, str] = {
     "openai": "gpt-4o-mini",
     "anthropic": "claude-sonnet-4-20250514",
     "google": "gemini-2.0-flash",
+}
+
+# ── Provider → curated model lists ─────────────────────────────────
+PROVIDER_MODELS: dict[str, list[str]] = {
+    "ollama": ["llama3.2:3b", "llama3.2:1b", "llama3.3:70b", "phi3", "mistral", "gemma2"],
+    "openai": ["gpt-4o-mini", "gpt-4o", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o3-mini", "o4-mini"],
+    "anthropic": ["claude-sonnet-4-20250514", "claude-haiku-4-20250514"],
+    "google": ["gemini-2.0-flash", "gemini-2.5-pro", "gemini-2.5-flash"],
 }
 
 # ── System prompt ───────────────────────────────────────────────────
@@ -90,35 +109,6 @@ def format_context(chunks: list[dict]) -> str:
             f"[Source: {title} | {source}]\n{chunk['text']}"
         )
     return "\n\n---\n\n".join(context_parts)
-
-
-def build_prompt(query: str, chunks: list[dict]) -> str:
-    """Assemble a RAG prompt from a query and retrieved chunks.
-
-    Uses ``RAG_PROMPT`` (a ``ChatPromptTemplate``) internally but
-    returns the human-message text as a plain string for backward
-    compatibility with callers that inspect prompt content
-    (tests, logging).
-
-    Parameters
-    ----------
-    query : str
-        The user's natural-language question.
-    chunks : list[dict]
-        Output of ``retrieve_formatted()`` — each dict has keys
-        ``rank``, ``id``, ``distance``, ``text``, ``metadata``.
-
-    Returns
-    -------
-    str
-        A formatted prompt ready to send to the LLM.
-    """
-    context_block = format_context(chunks)
-    return (
-        f"CONTEXT:\n{context_block}\n\n"
-        f"QUESTION:\n{query}\n\n"
-        f"ANSWER:"
-    )
 
 
 # ── LLM interaction ─────────────────────────────────────────────────
@@ -196,6 +186,29 @@ def get_llm(
     )
 
 
+# ── LCEL chain ──────────────────────────────────────────────────────
+
+def rag_chain(
+    model: str = DEFAULT_MODEL,
+    temperature: float = DEFAULT_TEMPERATURE,
+    provider: str = DEFAULT_PROVIDER,
+):
+    """Build a reusable LCEL chain: prompt → llm → string output.
+
+    The chain expects a dict with keys ``context`` (str) and
+    ``question`` (str).
+
+    Returns
+    -------
+    Runnable
+        ``RAG_PROMPT | llm | StrOutputParser()``
+    """
+    llm = get_llm(model=model, temperature=temperature, provider=provider)
+    return RAG_PROMPT | llm | StrOutputParser()
+
+
+# ── Generate ────────────────────────────────────────────────────────
+
 def generate_answer(
     query: str,
     chunks: list[dict],
@@ -204,6 +217,8 @@ def generate_answer(
     provider: str = DEFAULT_PROVIDER,
 ) -> str:
     """Send a RAG prompt to the configured LLM and return the answer.
+
+    Uses the LCEL chain internally.
 
     Parameters
     ----------
@@ -226,25 +241,20 @@ def generate_answer(
     Raises
     ------
     ConnectionError
-        If the Ollama server is not reachable.
+        If the LLM server is not reachable.
     """
-    prompt = build_prompt(query, chunks)
-    llm = get_llm(model=model, temperature=temperature, provider=provider)
-
     logger.info(
         f"Generating answer  (provider={provider}, model={model}, "
         f"chunks={len(chunks)}, query='{query[:60]}')"
     )
 
     try:
-        context_block = format_context(chunks)
-        messages = RAG_PROMPT.format_messages(
-            context=context_block, question=query,
+        chain = rag_chain(
+            model=model, temperature=temperature, provider=provider,
         )
-        response = llm.invoke(messages)
-        answer = response.content
+        context_block = format_context(chunks)
+        answer = chain.invoke({"context": context_block, "question": query})
     except Exception as exc:
-        # Surface a clear message when a local Ollama isn't running
         exc_str = str(exc).lower()
         if "connection" in exc_str or "refused" in exc_str:
             raise ConnectionError(
@@ -264,77 +274,44 @@ def generate_answer(
     return answer
 
 
-# ── Convenience wrapper ─────────────────────────────────────────────
+# ── Streaming (for Streamlit) ───────────────────────────────────────
 
-def ask(
+def stream_answer(
     query: str,
-    n_results: int = DEFAULT_TOP_K,
-    where: dict | None = None,
+    chunks: list[dict],
     model: str = DEFAULT_MODEL,
     temperature: float = DEFAULT_TEMPERATURE,
     provider: str = DEFAULT_PROVIDER,
-    persist_dir: str | None = None,
-    collection_name: str | None = None,
-) -> dict:
-    """End-to-end RAG: retrieve chunks then generate an answer.
+) -> Iterator[str]:
+    """Stream an answer token-by-token using the LCEL chain.
 
-    This is the single-call entry point that wires retrieval to
-    generation.
+    Yields string fragments as they arrive from the LLM.
 
     Parameters
     ----------
     query : str
-        Natural-language question.
-    n_results : int
-        Number of chunks to retrieve.
-    where : dict | None
-        Optional ChromaDB metadata filter.
-    model : str
-        Model name/tag for the chosen provider.
-    temperature : float
-        Sampling temperature.
-    provider : str
-        LLM provider name (ollama, openai, anthropic, google).
-    persist_dir : str | None
-        ChromaDB directory (uses default if None).
-    collection_name : str | None
-        ChromaDB collection name (uses default if None).
+        The user's question.
+    chunks : list[dict]
+        Retrieved document chunks (from ``retrieve_formatted()``).
+    model, temperature, provider
+        LLM configuration — same as :func:`generate_answer`.
 
-    Returns
-    -------
-    dict
-        ``{"query": ..., "answer": ..., "chunks": ..., "model": ...,
-        "provider": ...}``
+    Yields
+    ------
+    str
+        Token-by-token chunks of the answer.
     """
-    # Lazy import to avoid circular deps and keep retrieval usable
-    # without generation deps installed
-    from src.retrieval.query import retrieve_formatted
-    from src.embedding.model import COLLECTION_NAME, VECTOR_DB_DIR
+    chain = rag_chain(
+        model=model, temperature=temperature, provider=provider,
+    )
+    context_block = format_context(chunks)
 
-    _persist_dir = persist_dir or VECTOR_DB_DIR
-    _collection_name = collection_name or COLLECTION_NAME
-
-    logger.info(f"ask() — retrieving top-{n_results} chunks")
-    chunks = retrieve_formatted(
-        query,
-        n_results=n_results,
-        where=where,
-        persist_dir=_persist_dir,
-        collection_name=_collection_name,
+    logger.info(
+        f"Streaming answer  (provider={provider}, model={model}, "
+        f"chunks={len(chunks)}, query='{query[:60]}')"
     )
 
-    answer = generate_answer(
-        query,
-        chunks,
-        model=model,
-        temperature=temperature,
-        provider=provider,
-    )
+    yield from chain.stream({"context": context_block, "question": query})
 
-    return {
-        "query": query,
-        "answer": answer,
-        "chunks": chunks,
-        "model": model,
-        "provider": provider,
-    }
+
+

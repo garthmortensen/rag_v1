@@ -3,15 +3,18 @@
 Multi-pane browser interface with sidebar controls and a
 chat-style main area for querying stress testing documents.
 
+Answers stream token-by-token using the LCEL chain's
+``.stream()`` method via ``st.write_stream()``.
+
 Launch:
     uv run streamlit run app.py
 """
 
 import time
-import threading
 from datetime import datetime
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 # ── Page config (must be first Streamlit call) ──────────────────────
 st.set_page_config(
@@ -23,11 +26,12 @@ st.set_page_config(
 from src.config import CFG, config_as_text
 from src.embedding.model import VECTOR_DB_DIR, COLLECTION_NAME
 from src.generation.llm import (
-    generate_answer,
+    stream_answer,
     DEFAULT_MODEL,
     DEFAULT_PROVIDER,
     DEFAULT_TEMPERATURE,
     PROVIDER_DEFAULTS,
+    PROVIDER_MODELS,
 )
 from src.retrieval.query import retrieve_formatted
 from src.retrieval.query_logger import log_query_session
@@ -133,14 +137,29 @@ with st.sidebar:
     provider = st.selectbox(
         "LLM Provider", provider_list, index=default_provider_idx
     )
-    model = st.text_input(
-        "Model",
-        value=(
-            DEFAULT_MODEL
-            if provider == DEFAULT_PROVIDER
-            else PROVIDER_DEFAULTS.get(provider, "")
-        ),
+
+    # Model selector: curated list + "Other" escape hatch
+    model_options = PROVIDER_MODELS.get(provider, [])
+    default_model = (
+        DEFAULT_MODEL
+        if provider == DEFAULT_PROVIDER
+        else PROVIDER_DEFAULTS.get(provider, "")
     )
+    # Build display list: curated models + "Other…"
+    display_options = list(model_options) + ["Other…"]
+    default_idx = (
+        model_options.index(default_model)
+        if default_model in model_options
+        else 0
+    )
+    model_choice = st.selectbox(
+        "Model", display_options, index=default_idx
+    )
+    if model_choice == "Other…":
+        model = st.text_input("Custom model name", value="")
+    else:
+        model = model_choice
+
     temperature = st.slider(
         "Temperature",
         min_value=0.0,
@@ -165,9 +184,23 @@ if "messages" not in st.session_state:
 
 # ── Copy helper ─────────────────────────────────────────────────────
 
-def _format_qa(question: str, answer: str) -> str:
-    """Format a Q&A exchange as plain text for clipboard copying."""
-    return f"Q: {question}\n\nA: {answer}"
+def _copy_button(question: str, answer: str, key: str) -> None:
+    """Render a single-click copy-to-clipboard button for a Q&A pair."""
+    import html as _html
+
+    qa_text = f"Q: {question}\n\nA: {answer}"
+    escaped = _html.escape(qa_text).replace("`", "&#96;").replace("\n", "\\n")
+    components.html(
+        f"""
+        <button onclick="navigator.clipboard.writeText(`{escaped}`.replace(/\\n/g,'\n'))
+            .then(()=>{{this.textContent='✅ Copied!';setTimeout(()=>this.textContent='📋 Copy Q&A',1500)}})"
+            style="background:#262730;color:#fafafa;border:1px solid #4a4a5a;
+                   border-radius:6px;padding:4px 14px;cursor:pointer;font-size:14px;">
+            📋 Copy Q&A
+        </button>
+        """,
+        height=42,
+    )
 
 
 # ── Chunk renderer ──────────────────────────────────────────────────
@@ -197,10 +230,15 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         if "timestamp" in msg:
             ts = msg["timestamp"]
-            label = ts.strftime("%A, %H:%M")
-            if msg["role"] == "assistant" and "delta" in msg:
-                label += f"  ·  ⏱ {msg['delta']}"
-            st.caption(label)
+            if msg["role"] == "user":
+                st.caption(f"🕐 Asked: {ts.strftime('%A, %H:%M:%S')}")
+            elif msg["role"] == "assistant":
+                label = f"🕐 Answered: {ts.strftime('%A, %H:%M:%S')}"
+                if "query_time" in msg:
+                    label = f"🕐 Asked: {msg['query_time'].strftime('%H:%M:%S')}  →  Answered: {ts.strftime('%H:%M:%S')}"
+                if "delta" in msg:
+                    label += f"  ·  ⏱ {msg['delta']}"
+                st.caption(label)
         if msg["role"] == "assistant" and "sources" in msg:
             with st.expander(
                 f"📚 Retrieved Sources ({len(msg['sources'])} chunks)",
@@ -211,8 +249,7 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
         # Copy Q&A button for assistant messages
         if msg["role"] == "assistant" and "query" in msg:
-            qa_text = _format_qa(msg["query"], msg["content"])
-            st.code(qa_text, language="text")
+            _copy_button(msg["query"], msg["content"], key=f"copy_{id(msg)}")
 
 
 # ── Chat input ──────────────────────────────────────────────────────
@@ -225,7 +262,7 @@ if query:
         {"role": "user", "content": query, "timestamp": query_time}
     )
     with st.chat_message("user"):
-        st.caption(query_time.strftime("%A, %H:%M"))
+        st.caption(f"🕐 Asked: {query_time.strftime('%A, %H:%M:%S')}")
         st.markdown(query)
 
     # Build metadata filter from checkboxes
@@ -253,13 +290,16 @@ if query:
         where = {"$and": conditions}
 
     # Retrieve chunks
-    with st.spinner("🔍 Retrieving chunks…"):
+    with st.status("🔍 Retrieving chunks…", expanded=False) as retrieval_status:
         chunks = retrieve_formatted(
             query,
             n_results=top_k,
             where=where,
             persist_dir=VECTOR_DB_DIR,
             collection_name=selected_collection,
+        )
+        retrieval_status.update(
+            label=f"✅ Retrieved {len(chunks)} chunks", state="complete",
         )
 
     if not chunks:
@@ -274,63 +314,45 @@ if query:
         for chunk in chunks:
             _render_chunk(chunk)
 
-    # Generate LLM answer
+    # Generate LLM answer (streaming, token-by-token)
     with st.chat_message("assistant"):
-        # Run generation in a thread so we can update the timer
-        result: dict = {"answer": None, "error": None}
-
-        def _generate():
-            try:
-                result["answer"] = generate_answer(
-                    query, chunks, model=model, temperature=temperature,
+        with st.status(f"🤖 Generating answer with {provider}/{model}…", expanded=False) as gen_status:
+            start = time.time()
+            gen_status.update(label=f"🤖 Generating answer with {provider}/{model}…", state="running")
+        try:
+            answer = st.write_stream(
+                stream_answer(
+                    query,
+                    chunks,
+                    model=model,
+                    temperature=temperature,
                     provider=provider,
                 )
-            except Exception as exc:
-                result["error"] = exc
-
-        thread = threading.Thread(target=_generate, daemon=True)
-        timer_placeholder = st.empty()
-        start = time.time()
-        thread.start()
-
-        while thread.is_alive():
-            elapsed = time.time() - start
-            mins, secs = divmod(int(elapsed), 60)
-            timer_placeholder.markdown(
-                f"🤖 Generating answer… **{mins:02d}:{secs:02d}**"
             )
-            time.sleep(0.5)
+        except ConnectionError as exc:
+            st.error(str(exc))
+            st.stop()
+        except ImportError as exc:
+            st.error(str(exc))
+            st.stop()
+        except Exception as exc:
+            st.error(f"Generation failed: {exc}")
+            st.stop()
 
         elapsed = time.time() - start
         mins, secs = divmod(int(elapsed), 60)
-        timer_placeholder.markdown(
-            f"✅ Answer generated in **{mins:02d}:{secs:02d}**"
-        )
+        delta_str = f"{mins:02d}:{secs:02d}"
+        elapsed_detailed = f"{elapsed:.1f}s"
 
-        if result["error"] is not None:
-            exc = result["error"]
-            if isinstance(exc, ConnectionError):
-                st.error(str(exc))
-            elif isinstance(exc, ImportError):
-                st.error(str(exc))
-            else:
-                st.error(f"Generation failed: {exc}")
-            st.stop()
-
-        answer = result["answer"]
         response_time = datetime.now()
-        delta = response_time - query_time
-        delta_mins, delta_secs = divmod(int(delta.total_seconds()), 60)
-        delta_str = f"{delta_mins:02d}:{delta_secs:02d}"
-
         st.caption(
-            f"{response_time.strftime('%A, %H:%M')}  ·  ⏱ {delta_str}"
+            f"🕐 Asked: {query_time.strftime('%H:%M:%S')}  →  "
+            f"Answered: {response_time.strftime('%H:%M:%S')}  ·  "
+            f"⏱ {delta_str} ({elapsed_detailed})"
         )
-        st.markdown(answer)
 
     # Copy Q&A to clipboard
-    qa_text = _format_qa(query, answer)
-    st.code(qa_text, language="text")
+    _copy_button(query, answer, key="copy_latest")
 
     # Save assistant message with sources for history
     st.session_state.messages.append(
@@ -338,9 +360,10 @@ if query:
             "role": "assistant",
             "content": answer,
             "query": query,
+            "query_time": query_time,
             "sources": chunks,
             "timestamp": response_time,
-            "delta": delta_str,
+            "delta": f"{delta_str} ({elapsed_detailed})",
         }
     )
 
@@ -350,4 +373,9 @@ if query:
         results=chunks,
         answer=answer,
         collection_name=selected_collection,
+        query_time=query_time,
+        response_time=response_time,
+        elapsed_seconds=elapsed,
+        provider=provider,
+        model=model,
     )

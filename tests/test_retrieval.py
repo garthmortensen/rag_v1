@@ -19,7 +19,6 @@ Run with:
 import os
 import sys
 import unittest
-from io import StringIO
 from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -27,9 +26,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from src.retrieval.query import (
     retrieve,
     retrieve_formatted,
-    _parse_filter,
-    _print_results,
-    main,
     DEFAULT_TOP_K,
 )
 from src.embedding.model import COLLECTION_NAME, VECTOR_DB_DIR
@@ -201,104 +197,6 @@ class TestRetrievalUnit(unittest.TestCase):
 
         results = retrieve_formatted("empty query")
         self.assertEqual(results, [])
-
-
-class TestParseFilter(unittest.TestCase):
-    """Tests for the --filter CLI argument parser."""
-
-    def test_simple_key_value(self):
-        self.assertEqual(_parse_filter("source_type=pdf"), {"source_type": "pdf"})
-
-    def test_strips_whitespace(self):
-        self.assertEqual(_parse_filter(" key = value "), {"key": "value"})
-
-    def test_value_with_equals(self):
-        """Values containing '=' should be preserved (split on first '=' only)."""
-        result = _parse_filter("url=https://example.com?a=1")
-        self.assertEqual(result, {"url": "https://example.com?a=1"})
-
-    def test_raises_on_missing_equals(self):
-        with self.assertRaises(ValueError):
-            _parse_filter("no_equals_here")
-
-
-class TestPrintResults(unittest.TestCase):
-    """Tests for the _print_results() display helper."""
-
-    def test_prints_no_results_message(self):
-        """Empty result list should print a 'No results found.' message."""
-        captured = StringIO()
-        sys.stdout = captured
-        _print_results([])
-        sys.stdout = sys.__stdout__
-        self.assertIn("No results found", captured.getvalue())
-
-    def test_prints_all_results(self):
-        """Should print one block per result with rank, ID, title, source, text."""
-        fake = [
-            {
-                "rank": 1,
-                "id": "ABC_chunk_0000",
-                "distance": 0.1234,
-                "text": "Some chunk text here.",
-                "metadata": {
-                    "source": "corpus/raw_data/test.pdf",
-                    "title": "Test Doc",
-                },
-            },
-        ]
-        captured = StringIO()
-        sys.stdout = captured
-        _print_results(fake)
-        sys.stdout = sys.__stdout__
-        output = captured.getvalue()
-
-        self.assertIn("Rank 1", output)
-        self.assertIn("0.1234", output)
-        self.assertIn("ABC_chunk_0000", output)
-        self.assertIn("Test Doc", output)
-        self.assertIn("corpus/raw_data/test.pdf", output)
-        self.assertIn("1 result(s)", output)
-
-
-class TestCLI(unittest.TestCase):
-    """Tests for the main() CLI entry point."""
-
-    @patch("src.retrieval.query.retrieve_formatted")
-    @patch("src.retrieval.query._print_results")
-    def test_main_basic_query(self, mock_print, mock_retrieve):
-        """main() should call retrieve_formatted with the query and default top-k."""
-        mock_retrieve.return_value = []
-        main(["What is the peak unemployment rate?"])
-
-        mock_retrieve.assert_called_once_with(
-            "What is the peak unemployment rate?",
-            n_results=DEFAULT_TOP_K,
-            where=None,
-        )
-        mock_print.assert_called_once()
-
-    @patch("src.retrieval.query.retrieve_formatted")
-    @patch("src.retrieval.query._print_results")
-    def test_main_custom_top_k(self, mock_print, mock_retrieve):
-        """--top-k should override the default."""
-        mock_retrieve.return_value = []
-        main(["query text", "--top-k", "10"])
-
-        mock_retrieve.assert_called_once_with(
-            "query text", n_results=10, where=None
-        )
-
-    @patch("src.retrieval.query.retrieve_formatted")
-    @patch("src.retrieval.query._print_results")
-    def test_main_with_filter(self, mock_print, mock_retrieve):
-        """--filter key=value should be parsed and forwarded."""
-        mock_retrieve.return_value = []
-        main(["query text", "--filter", "source_type=pdf"])
-
-        mock_retrieve.assert_called_once_with(
-            "query text", n_results=DEFAULT_TOP_K, where={"source_type": "pdf"}
-        )
 
 
 # ── Integration Tests (live vector DB) ──────────────────────────────

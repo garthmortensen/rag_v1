@@ -168,6 +168,18 @@ uv run python -m src.retrieval.query "CET1 capital ratio" --top-k 10 --filter so
 
 Add the `--answer` flag for a ChatGPT-like experience — retrieves the top-k chunks, builds a grounded prompt, and sends it to the configured LLM. Answers include source citations.
 
+The generation pipeline uses **LangChain Expression Language (LCEL)** to compose a declarative chain:
+
+```text
+RAG_PROMPT | llm | StrOutputParser()
+```
+
+- `RAG_PROMPT` — a `ChatPromptTemplate` with system and human messages
+- `llm` — the provider-specific chat model returned by `get_llm()`
+- `StrOutputParser()` — extracts the plain-text response
+
+LCEL enables native `.stream()` support — the Streamlit UI renders tokens as they arrive.
+
 ### LLM Providers
 
 The LLM backend is configurable via `config.txt`:
@@ -218,6 +230,45 @@ To use a remote provider:
 | `--model MODEL` | Override the model from `config.txt` |
 | `--provider PROVIDER` | Override the provider from `config.txt` |
 
+## Evaluation (ragas)
+
+The project includes a built-in evaluation pipeline powered by [ragas](https://docs.ragas.io/) to measure RAG quality across four metrics:
+
+| Metric | What it measures |
+|--------|-----------------|
+| **Faithfulness** | Is the answer grounded in the retrieved context? |
+| **Response Relevancy** | Does the answer address the question? |
+| **LLM Context Recall** | Did retrieval surface the information needed for the ground-truth answer? |
+| **Factual Correctness** | Does the answer match the expected ground-truth? |
+
+### Running evaluation
+
+```bash
+# Default: uses config.txt provider/model, top-k=5
+uv run python -m src.evaluation.evaluate
+
+# Override settings
+uv run python -m src.evaluation.evaluate --provider openai --model gpt-4o-mini --top-k 10
+
+# Export results to CSV
+uv run python -m src.evaluation.evaluate --out results.csv
+```
+
+The evaluation dataset lives in `src/evaluation/dataset.py` — 8 curated question/ground-truth pairs covering stress testing topics (unemployment scenarios, capital ratios, regulatory requirements, etc.).
+
+## LangSmith Tracing
+
+[LangSmith](https://smith.langchain.com/) provides end-to-end observability for every LLM call, chain invocation, and retrieval step. Because the pipeline uses LCEL, tracing is **zero-config** — just set two environment variables:
+
+```bash
+cp .env.example .env
+# In .env, uncomment and set:
+#   LANGCHAIN_TRACING_V2=true
+#   LANGCHAIN_API_KEY=ls-...
+```
+
+Once enabled, every `generate_answer()`, `stream_answer()`, and `ask()` call is automatically traced in the LangSmith dashboard with full input/output visibility, latency breakdowns, and token counts. No code changes required — `langsmith` is already installed as a `langchain-core` dependency.
+
 ## Web UI (Streamlit)
 
 A multi-pane browser interface for interactive querying:
@@ -236,6 +287,7 @@ uv run streamlit run app.py
 
 **Main pane:**
 - Chat-style interface with message history
+- **Token-by-token streaming** — answers render word-by-word via `st.write_stream()` and the LCEL chain's `.stream()` method
 - LLM-generated answers with source citations
 - **Copy Q&A** — one-click button to copy the question and answer to clipboard
 - Expandable retrieved sources showing rank, category, distance, and chunk text
@@ -264,14 +316,19 @@ rag_stress_testing/
 │   ├── retrieval/
 │   │   ├── query.py           # Semantic search: embed query → ANN lookup
 │   │   └── query_logger.py    # Log query sessions to logs/
-│   └── generation/
-│       └── llm.py             # Multi-provider LLM factory + RAG generation
+│   ├── generation/
+│   │   └── llm.py             # LCEL chain: RAG_PROMPT | llm | StrOutputParser()
+│   └── evaluation/
+│       ├── dataset.py         # Curated Q&A pairs for ragas evaluation
+│       └── evaluate.py        # CLI runner: ragas metrics + CSV export
 ├── tests/
 │   ├── test_config.py
 │   ├── test_downloader.py
 │   ├── test_embedding.py
+│   ├── test_evaluation.py
 │   ├── test_retrieval.py
 │   ├── test_generation.py
+│   ├── test_query_logger.py
 │   └── test_utils.py
 ├── docs/
 │   └── architecture.md        # ADRs, pipeline diagrams, design details
@@ -316,9 +373,13 @@ rag_stress_testing/
 - [x] Add source citation to generated answers
 
 ### Phase 5: evaluation & hardening
-- [ ] Build evaluation dataset (question/answer pairs)
+- [x] Rewrite generation pipeline to LCEL chain (`RAG_PROMPT | llm | StrOutputParser()`)
+- [x] Token-by-token streaming in Streamlit via `st.write_stream()` + LCEL `.stream()`
+- [x] Build evaluation dataset (8 curated Q&A pairs in `src/evaluation/dataset.py`)
+- [x] Measure generation quality via **ragas** (Faithfulness, Response Relevancy, Context Recall, Factual Correctness)
+- [x] Add LangSmith tracing support (zero-config via `LANGCHAIN_TRACING_V2` env var)
+- [x] Document-based retrieval API (`retrieve_as_documents()` returning `list[Document]`)
 - [ ] Measure retrieval quality (precision, recall, MRR)
-- [ ] Measure generation quality (faithfulness, relevance)
 - [ ] Tune chunk size, overlap, and top-k parameters
 - [ ] Add logging and error handling
 
