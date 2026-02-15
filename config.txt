@@ -11,9 +11,9 @@
 # collection_name back to "stress_test_docs_1k" (no re-embedding needed).
 # ────────────────────────────────────────────────────────────────────
 
-chunk_size       = 10000
+chunk_size       = 2000
 chunk_overlap    = 200
-collection_name  = stress_test_docs_10k
+collection_name  = stress_test_docs_2k
 beep_on_answer   = true
 
 # ── LLM provider ───────────────────────────────────────────────────

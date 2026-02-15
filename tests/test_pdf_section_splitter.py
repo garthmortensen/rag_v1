@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from src.ingestion.pdf_section_splitter import (
     has_section_headers,
     load_pdf_by_section,
+    scan_pdf_sections,
     _strip_page_header,
     _PAGE_HEADER_RE,
     _SUBSECTION_HEADING_RE,
@@ -376,6 +377,66 @@ class TestLoaderIntegration(unittest.TestCase):
         mock_has_headers.assert_called_once_with("flat.pdf")
         mock_loader_cls.assert_called_once_with("flat.pdf")
         self.assertEqual(len(docs), 1)
+
+
+# ── scan_pdf_sections tests ─────────────────────────────────────────
+
+
+class TestScanPdfSections(unittest.TestCase):
+    """Tests for the lightweight scan_pdf_sections() probe."""
+
+    @patch("src.ingestion.pdf_section_splitter.PdfReader")
+    def test_returns_sections_and_subsections(self, mock_reader_cls):
+        """Scan should return section → subsection mapping."""
+        pages = [
+            "1 Model Documentation: Corporate Model\n"
+            "i. Statement of Purpose\nSome text here.",
+            "2 Model Documentation: Corporate Model\n"
+            "ii. Model Overview\nMore text here.",
+            "3 Model Documentation: CRE Model\n"
+            "i. Statement of Purpose\nCRE intro.",
+        ]
+        mock_reader_cls.return_value = _make_reader(pages)
+        result = scan_pdf_sections("dummy.pdf")
+
+        self.assertIn("Corporate Model", result)
+        self.assertIn("CRE Model", result)
+        self.assertEqual(result["Corporate Model"], ["Model Overview", "Statement of Purpose"])
+        self.assertEqual(result["CRE Model"], ["Statement of Purpose"])
+
+    @patch("src.ingestion.pdf_section_splitter.PdfReader")
+    def test_excludes_preamble(self, mock_reader_cls):
+        """Preamble pages (before first header) should be excluded."""
+        pages = [
+            "Title Page\nTable of Contents",  # no header → preamble
+            "2 Model Documentation: Operational Risk Model\n"
+            "i. Model Overview\nText.",
+        ]
+        mock_reader_cls.return_value = _make_reader(pages)
+        result = scan_pdf_sections("dummy.pdf")
+
+        self.assertNotIn("(preamble)", result)
+        self.assertIn("Operational Risk Model", result)
+        self.assertEqual(result["Operational Risk Model"], ["Model Overview"])
+
+    @patch("src.ingestion.pdf_section_splitter.PdfReader")
+    def test_section_with_no_subsections(self, mock_reader_cls):
+        """A section with no Roman-numeral headings → empty subsection list."""
+        pages = [
+            "1 Model Documentation: Revisions\nJust plain text here.",
+        ]
+        mock_reader_cls.return_value = _make_reader(pages)
+        result = scan_pdf_sections("dummy.pdf")
+
+        self.assertIn("Revisions", result)
+        self.assertEqual(result["Revisions"], [])
+
+    @patch("src.ingestion.pdf_section_splitter.PdfReader")
+    def test_empty_pdf(self, mock_reader_cls):
+        """A PDF with no pages should return empty dict."""
+        mock_reader_cls.return_value = _make_reader([])
+        result = scan_pdf_sections("empty.pdf")
+        self.assertEqual(result, {})
 
 
 if __name__ == "__main__":

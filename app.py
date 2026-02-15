@@ -10,6 +10,8 @@ Launch:
     uv run streamlit run app.py
 """
 
+import glob
+import os
 import time
 from datetime import datetime
 
@@ -33,6 +35,7 @@ from src.generation.llm import (
     PROVIDER_DEFAULTS,
     PROVIDER_MODELS,
 )
+from src.ingestion.pdf_section_splitter import has_section_headers, scan_pdf_sections
 from src.retrieval.query import retrieve_formatted
 from src.retrieval.query_logger import log_query_session
 
@@ -176,6 +179,55 @@ st.caption(
     f"Model: **{model}** · "
     f"Top-K: **{top_k}**"
 )
+
+
+# ── Section overview banner ─────────────────────────────────────────
+
+@st.cache_data(show_spinner=False)
+def _scan_corpus_sections(raw_dir: str) -> dict[str, dict[str, list[str]]]:
+    """Scan all PDFs in *raw_dir* and return section metadata.
+
+    Returns a dict keyed by a short PDF display name, whose values are
+    ``{section_name: [subsection_names, …]}``.  Only PDFs that pass
+    ``has_section_headers()`` are included.
+    """
+    results: dict[str, dict[str, list[str]]] = {}
+    for pdf in sorted(glob.glob(os.path.join(raw_dir, "*.pdf"))):
+        if has_section_headers(pdf):
+            sections = scan_pdf_sections(pdf)
+            # Build a readable short name from the filename
+            short = (
+                os.path.basename(pdf)
+                .replace(".pdf", "")
+                .replace("_", " ")
+                .title()
+            )
+            results[short] = sections
+    return results
+
+
+_RAW_DIR = os.path.join(os.path.dirname(__file__), "corpus", "raw_data")
+_corpus_sections = _scan_corpus_sections(_RAW_DIR)
+
+if _corpus_sections:
+    with st.expander("📑 **Available Model Documentation Sections**", expanded=False):
+        st.markdown(
+            "The following PDFs have been **section-split** for higher-quality "
+            "retrieval.  You can ask questions about any of these topics."
+        )
+        for pdf_name, sections in _corpus_sections.items():
+            st.markdown(f"**📄 {pdf_name}**")
+            for sec, subs in sections.items():
+                if subs:
+                    sub_list = ", ".join(subs)
+                    st.markdown(f"- **{sec}** — _{sub_list}_")
+                else:
+                    st.markdown(f"- **{sec}**")
+        st.caption(
+            f"{len(_corpus_sections)} section-split PDF(s) · "
+            f"{sum(len(s) for s in _corpus_sections.values())} sections total"
+        )
+
 
 # Chat history
 if "messages" not in st.session_state:

@@ -69,6 +69,64 @@ def has_section_headers(filepath: str, sample_pages: int = 10) -> bool:
     return False
 
 
+def scan_pdf_sections(filepath: str) -> dict[str, list[str]]:
+    """Return a mapping of section → sorted subsection names for a PDF.
+
+    This is a *lightweight* probe — it extracts section names from
+    page headers and subsection names from Roman-numeral headings
+    without building full Document objects.  Used by the Streamlit
+    banner to show users what topics are available before they ask
+    questions.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to a PDF that passes :func:`has_section_headers`.
+
+    Returns
+    -------
+    dict[str, list[str]]
+        Keys are section names (e.g. ``"Corporate Model"``).
+        Values are sorted lists of subsection names found in that
+        section, excluding the synthetic ``"(intro)"`` and
+        ``"(preamble)"`` labels.
+    """
+    reader = PdfReader(filepath)
+    n_pages = len(reader.pages)
+
+    # Extract text & detect section per page
+    page_texts: list[str] = []
+    page_sections: list[str] = []
+    current_section = "(preamble)"
+    for i in range(n_pages):
+        text = reader.pages[i].extract_text() or ""
+        page_texts.append(text)
+        m = _PAGE_HEADER_RE.search(text)
+        if m:
+            current_section = m.group(1).strip()
+        page_sections.append(current_section)
+
+    # Collect subsection headings per section
+    sections: dict[str, set[str]] = {}
+    for i, text in enumerate(page_texts):
+        sec = page_sections[i]
+        if sec == "(preamble)":
+            continue
+        if sec not in sections:
+            sections[sec] = set()
+        for m in _SUBSECTION_HEADING_RE.finditer(text):
+            name = m.group(2).strip()
+            if name and len(name) > 2:
+                sections[sec].add(name)
+
+    # Drop synthetic labels, sort
+    return {
+        sec: sorted(subs)
+        for sec, subs in sections.items()
+        if sec not in ("(preamble)",)
+    }
+
+
 def load_pdf_by_section(filepath: str) -> list[Document]:
     """Load a structured PDF and return one Document per subsection.
 
