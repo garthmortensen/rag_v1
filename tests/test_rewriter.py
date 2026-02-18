@@ -23,6 +23,9 @@ from src.generation.rewriter import (
     _invoke_llm,
     _split_on_paragraphs,
     _build_prompt,
+    _split_markdown_sections,
+    discover_rewrite_outputs,
+    refine_markdown_iter,
     MAX_CHUNK_CHARS,
 )
 
@@ -471,6 +474,59 @@ class TestRewritePdf(unittest.TestCase):
             # Summarize mode: 1 LLM call per section (no extra summary)
             self.assertEqual(mock_llm.invoke.call_count, 1)
 
+    @patch("src.generation.rewriter.load_pdf_by_section")
+    @patch("src.generation.rewriter.has_section_headers")
+    @patch("src.generation.rewriter.get_llm")
+    @patch("os.path.isfile", return_value=True)
+    def test_selected_sections_filters_docs(
+        self, mock_isfile, mock_get_llm, mock_has_headers, mock_load
+    ):
+        """Only selected section/subsection documents should be processed."""
+        mock_has_headers.return_value = True
+        mock_load.return_value = _fake_docs(3)
+        mock_llm = _mock_llm("Selected only.")
+        mock_get_llm.return_value = mock_llm
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = rewrite_pdf(
+                "test.pdf",
+                output_dir=tmpdir,
+                provider="ollama",
+                model="test",
+                selected_sections={
+                    "Corporate Model": ["Statement of Purpose"],
+                },
+            )
+
+            with open(result) as f:
+                content = f.read()
+
+        self.assertIn("### Statement of Purpose", content)
+        self.assertNotIn("### Model Overview", content)
+        self.assertNotIn("## CRE Model", content)
+        self.assertEqual(mock_llm.invoke.call_count, 2)
+
+    @patch("src.generation.rewriter.load_pdf_by_section")
+    @patch("src.generation.rewriter.has_section_headers")
+    @patch("src.generation.rewriter.get_llm")
+    @patch("os.path.isfile", return_value=True)
+    def test_selected_sections_no_match_raises_value_error(
+        self, mock_isfile, mock_get_llm, mock_has_headers, mock_load
+    ):
+        """An empty filter result should raise a clear ValueError."""
+        mock_has_headers.return_value = True
+        mock_load.return_value = _fake_docs(2)
+        mock_get_llm.return_value = _mock_llm("Ignored.")
+
+        with self.assertRaises(ValueError) as ctx:
+            rewrite_pdf(
+                "test.pdf",
+                provider="ollama",
+                model="test",
+                selected_sections={"Nonexistent Section": ["Nope"]},
+            )
+        self.assertIn("No matching sections were selected", str(ctx.exception))
+
 
 # ── CLI tests ──────────────────────────────────────────────────────
 
@@ -519,6 +575,228 @@ class TestCLI(unittest.TestCase):
             call_kwargs[1]["custom_prompt"],
             "Write at an elementary-school level.",
         )
+
+
+# ── _split_markdown_sections tests ─────────────────────────────────
+
+
+class TestSplitMarkdownSections(unittest.TestCase):
+    """Tests for Markdown section splitting."""
+
+    def test_splits_on_h2_headings(self):
+        md = "# Title\n\n---\n\n## Section A\n\nBody A\n\n## Section B\n\nBody B\n"
+        result = _split_markdown_sections(md)
+        sections = [s["section"] for s in result]
+        self.assertIn("Section A", sections)
+        self.assertIn("Section B", sections)
+
+    def test_splits_on_h3_subsections(self):
+        md = (
+            "## Section A\n\n### Sub 1\n\nBody 1\n\n"
+            "### Sub 2\n\nBody 2\n"
+        )
+        result = _split_markdown_sections(md)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]["subsection"], "Sub 1")
+        self.assertEqual(result[1]["subsection"], "Sub 2")
+
+    def test_preamble_captured(self):
+        md = "Some intro text\n\n## Section A\n\nBody A\n"
+        result = _split_markdown_sections(md)
+        preamble = [s for s in result if s["section"] == "(preamble)"]
+        self.assertTrue(len(preamble) >= 1)
+
+    def test_empty_sections_filtered(self):
+        md = "## Empty\n\n---\n\n## Real\n\nSome body\n"
+        result = _split_markdown_sections(md)
+        # The empty section (only "---") should be filtered out
+        bodies = [s["body"] for s in result]
+        for b in bodies:
+            self.assertTrue(b.replace("-", "").strip())
+
+    def test_no_headings_returns_preamble(self):
+        md = "Just some plain text with no headings.\n\nAnother paragraph.\n"
+        result = _split_markdown_sections(md)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["section"], "(preamble)")
+
+
+# ── discover_rewrite_outputs tests ─────────────────────────────────
+
+
+class TestDiscoverRewriteOutputs(unittest.TestCase):
+    """Tests for the output discovery helper."""
+
+    def test_finds_md_in_subdirs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            subdir = os.path.join(tmpdir, "20260215_1519")
+            os.makedirs(subdir)
+            md_path = os.path.join(subdir, "test_rewrite.md")
+            with open(md_path, "w") as f:
+                f.write("# Test\n")
+            result = discover_rewrite_outputs(tmpdir)
+            self.assertEqual(len(result), 1)
+            self.assertIn("20260215_1519 / test_rewrite.md", list(result.keys())[0])
+
+    def test_finds_top_level_md(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            md_path = os.path.join(tmpdir, "standalone.md")
+            with open(md_path, "w") as f:
+                f.write("# Standalone\n")
+            result = discover_rewrite_outputs(tmpdir)
+            self.assertIn("standalone.md", result)
+
+    def test_empty_dir(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = discover_rewrite_outputs(tmpdir)
+            self.assertEqual(len(result), 0)
+
+    def test_nonexistent_dir(self):
+        result = discover_rewrite_outputs("/nonexistent/path")
+        self.assertEqual(len(result), 0)
+
+
+# ── _build_prompt refine tests ─────────────────────────────────────
+
+
+class TestBuildPromptRefine(unittest.TestCase):
+    """Tests for _build_prompt in refine mode."""
+
+    def test_refine_uses_custom_prompt(self):
+        prompt = _build_prompt("refine", "Add more diagrams.")
+        self.assertIn("Add more diagrams.", prompt)
+        self.assertIn("{text}", prompt)
+        self.assertNotIn("ADDITIONAL INSTRUCTIONS", prompt)
+
+    def test_refine_fallback_when_no_custom(self):
+        prompt = _build_prompt("refine")
+        self.assertIn("Improve clarity", prompt)
+        self.assertIn("{text}", prompt)
+
+    def test_refine_prompt_is_different_from_rewrite(self):
+        refine = _build_prompt("refine", "Make it shorter.")
+        rewrite = _build_prompt("rewrite", "Make it shorter.")
+        self.assertNotEqual(refine, rewrite)
+
+
+# ── refine_markdown_iter tests ─────────────────────────────────────
+
+
+class TestRefineMarkdownIter(unittest.TestCase):
+    """Tests for refine_markdown_iter()."""
+
+    _SAMPLE_MD = (
+        "# Test Doc\n\n---\n\n"
+        "## Section A\n\n### Sub 1\n\nOriginal body 1.\n\n"
+        "### Sub 2\n\nOriginal body 2.\n\n"
+        "## Section B\n\n### Sub 3\n\nOriginal body 3.\n"
+    )
+
+    @patch("src.generation.rewriter.get_llm")
+    def test_produces_refined_output(self, mock_get_llm):
+        mock_get_llm.return_value = _mock_llm("Refined.")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_path = os.path.join(tmpdir, "source_rewrite.md")
+            with open(src_path, "w") as f:
+                f.write(self._SAMPLE_MD)
+
+            events = list(refine_markdown_iter(
+                src_path,
+                provider="ollama",
+                model="test",
+                custom_prompt="Make it shorter.",
+                output_dir=tmpdir,
+            ))
+
+            # Should end with a "done" event
+            done = [e for e in events if e.phase == "done"]
+            self.assertEqual(len(done), 1)
+            out_path = done[0].output_path
+            self.assertTrue(os.path.isfile(out_path))
+            self.assertIn("_refine.md", out_path)
+
+            with open(out_path) as f:
+                content = f.read()
+            self.assertIn("Refined.", content)
+
+    @patch("src.generation.rewriter.get_llm")
+    def test_yields_processing_and_rewriting(self, mock_get_llm):
+        mock_get_llm.return_value = _mock_llm("Done.")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_path = os.path.join(tmpdir, "test_rewrite.md")
+            with open(src_path, "w") as f:
+                f.write(self._SAMPLE_MD)
+
+            events = list(refine_markdown_iter(
+                src_path,
+                provider="ollama",
+                model="test",
+                custom_prompt="Fix typos.",
+                output_dir=tmpdir,
+            ))
+
+            phases = [e.phase for e in events]
+            self.assertIn("processing", phases)
+            self.assertIn("rewriting", phases)
+            self.assertIn("done", phases)
+
+    def test_rejects_missing_file(self):
+        with self.assertRaises(FileNotFoundError):
+            list(refine_markdown_iter(
+                "/nonexistent/path.md",
+                provider="ollama",
+                model="test",
+            ))
+
+    @patch("src.generation.rewriter.get_llm")
+    def test_config_file_records_refine_mode(self, mock_get_llm):
+        mock_get_llm.return_value = _mock_llm("Refined.")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_path = os.path.join(tmpdir, "input_rewrite.md")
+            with open(src_path, "w") as f:
+                f.write(self._SAMPLE_MD)
+
+            events = list(refine_markdown_iter(
+                src_path,
+                provider="ollama",
+                model="test",
+                custom_prompt="Add glossary.",
+                output_dir=tmpdir,
+            ))
+
+            done = [e for e in events if e.phase == "done"]
+            config_path = os.path.join(
+                os.path.dirname(done[0].output_path), "config.txt"
+            )
+            with open(config_path) as f:
+                cfg = f.read()
+            self.assertIn("refine", cfg)
+            self.assertIn("Add glossary.", cfg)
+
+    @patch("src.generation.rewriter.get_llm")
+    def test_strips_rewrite_suffix_from_basename(self, mock_get_llm):
+        """Output filename strips trailing _rewrite from the source name."""
+        mock_get_llm.return_value = _mock_llm("Refined.")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_path = os.path.join(tmpdir, "my_doc_rewrite.md")
+            with open(src_path, "w") as f:
+                f.write(self._SAMPLE_MD)
+
+            events = list(refine_markdown_iter(
+                src_path,
+                provider="ollama",
+                model="test",
+                custom_prompt="Fix.",
+                output_dir=tmpdir,
+            ))
+            done = [e for e in events if e.phase == "done"]
+            basename = os.path.basename(done[0].output_path)
+            self.assertIn("my_doc_refine.md", basename)
+            self.assertNotIn("_rewrite_refine", basename)
 
 
 if __name__ == "__main__":

@@ -129,6 +129,83 @@ with st.sidebar:
 
     st.divider()
 
+    # ── PDF Section / Subsection filter ────────────────────────────
+    st.markdown("**📑 PDF Sections**")
+    st.caption("Limit retrieval to specific sections of model documentation PDFs.")
+
+    # _corpus_sections built below the sidebar; populate lazily via session cache
+    # We reference _corpus_sections which is computed right after the sidebar block.
+    # Use a placeholder dict that gets filled in after st.sidebar context exits.
+    _pdf_section_selections: dict[str, dict[str, list[str]]] = {}  # pdf → {sec → [subs]}
+
+    _RAW_DIR_SIDEBAR = os.path.join(os.path.dirname(__file__), "corpus", "raw_data")
+
+    @st.cache_data(show_spinner=False)
+    def _scan_corpus_sections_sidebar(raw_dir: str) -> dict[str, dict[str, list[str]]]:
+        results: dict[str, dict[str, list[str]]] = {}
+        for pdf in sorted(glob.glob(os.path.join(raw_dir, "*.pdf"))):
+            if has_section_headers(pdf):
+                sections = scan_pdf_sections(pdf)
+                short = (
+                    os.path.basename(pdf)
+                    .replace(".pdf", "")
+                    .replace("_", " ")
+                    .title()
+                )
+                results[short] = sections
+        return results
+
+    _sidebar_corpus_sections = _scan_corpus_sections_sidebar(_RAW_DIR_SIDEBAR)
+
+    selected_sections: dict[str, list[str]] = {}  # {section_name: [subsection_names]}
+
+    if _sidebar_corpus_sections:
+        _all_pdfs = list(_sidebar_corpus_sections.keys())
+        _selected_pdf = st.selectbox(
+            "PDF",
+            options=["(all PDFs)"] + _all_pdfs,
+            key="pdf_section_picker",
+        )
+        _pdfs_to_show = (
+            _all_pdfs if _selected_pdf == "(all PDFs)" else [_selected_pdf]
+        )
+
+        for _pdf_name in _pdfs_to_show:
+            _sec_map = _sidebar_corpus_sections[_pdf_name]
+            if len(_pdfs_to_show) > 1:
+                st.markdown(f"_📄 {_pdf_name}_")
+            for sec, subs in _sec_map.items():
+                sec_key = f"pdf_sec::{_pdf_name}::{sec}"
+                sec_checked = st.checkbox(sec, value=False, key=sec_key)
+                if not sec_checked:
+                    continue
+                if not subs:
+                    selected_sections.setdefault(sec, [])
+                    continue
+                chosen_subs: list[str] = []
+                for sub in subs:
+                    sub_key = f"pdf_sub::{_pdf_name}::{sec}::{sub}"
+                    if st.checkbox(f"↳ {sub}", value=False, key=sub_key):
+                        chosen_subs.append(sub)
+                if chosen_subs:
+                    selected_sections[sec] = chosen_subs
+                elif sec_checked:
+                    # Section checked but no subsections chosen → include all subs
+                    selected_sections[sec] = list(subs)
+
+        if selected_sections:
+            _sel_sub_count = sum(
+                len(v) if v else 1 for v in selected_sections.values()
+            )
+            st.caption(
+                f"Filtering to {len(selected_sections)} section(s), "
+                f"{_sel_sub_count} subsection(s)."
+            )
+    else:
+        st.caption("No section-split PDFs found in corpus.")
+
+    st.divider()
+
     # LLM settings
     st.subheader("🤖 Generation")
     provider_list = list(PROVIDER_DEFAULTS.keys())
@@ -334,6 +411,23 @@ if query:
             conditions.append({"category": selected_categories[0]})
         else:
             conditions.append({"category": {"$in": selected_categories}})
+
+    # PDF section / subsection filter
+    if selected_sections:
+        all_selected_secs = list(selected_sections.keys())
+        if len(all_selected_secs) == 1:
+            conditions.append({"section": all_selected_secs[0]})
+        else:
+            conditions.append({"section": {"$in": all_selected_secs}})
+
+        all_selected_subs = [
+            sub for subs in selected_sections.values() for sub in subs
+        ]
+        if all_selected_subs:
+            if len(all_selected_subs) == 1:
+                conditions.append({"subsection": all_selected_subs[0]})
+            else:
+                conditions.append({"subsection": {"$in": all_selected_subs}})
 
     where = None
     if len(conditions) == 1:

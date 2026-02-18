@@ -31,6 +31,9 @@ from src.generation.llm import (  # noqa: E402
 )
 from src.generation.rewriter import (  # noqa: E402
     rewrite_pdf_iter,
+    refine_markdown_iter,
+    discover_rewrite_outputs,
+    _split_markdown_sections,
     DEFAULT_OUTPUT_DIR,
 )
 from src.ingestion.pdf_section_splitter import (  # noqa: E402
@@ -96,18 +99,6 @@ st.caption(
     "section by section."
 )
 
-if not structured_pdfs:
-    st.warning(
-        "No structured PDFs found in `corpus/raw_data/`. "
-        "Download the corpus first with `uv run src/ingestion/downloader.py`."
-    )
-    st.stop()
-
-# ── PDF picker (main area — full width for long names) ──────────────
-pdf_names = list(structured_pdfs.keys())
-selected_name = st.selectbox("📄 PDF to rewrite", pdf_names)
-selected_path = structured_pdfs[selected_name]
-
 
 # ── Sidebar controls ───────────────────────────────────────────────
 with st.sidebar:
@@ -116,10 +107,11 @@ with st.sidebar:
     # Mode
     mode = st.radio(
         "✍️ Mode",
-        options=["rewrite", "summarize"],
+        options=["rewrite", "summarize", "refine"],
         format_func=lambda m: {
             "rewrite": "📖 Full Rewrite — plain English, all content",
             "summarize": "📋 Summarize — 2–3 sentences per section",
+            "refine": "🔄 Refine — further edit an existing output",
         }[m],
     )
 
@@ -162,45 +154,88 @@ with st.sidebar:
     # Custom prompt
     st.subheader("💬 Custom Instructions")
 
-    _DEFAULT_CUSTOM_PROMPT = """\
-Narrative-First, Code-Aided, Simple-English, Minimal-Math Rewrite Guide
+    _DEFAULT_REWRITE_PROMPT = """\
+Rewrite this section as a plain-English technical story. Lead with why the model exists and what it produces, then walk through the narrative pipeline (inputs → transforms → prediction → aggregation → reporting), keeping math minimal. Map every concept to real business objects (borrower, loan, collateral, macro, outcomes) and include a small Python toy example with a sanity check, a mermaid diagram showing the data/decision flow, and a one- or two-line intuition or metaphor to make it stick."""
 
-**Goal:** Rewrite the doc as a readable technical story: what problem \
-we're solving, what drives outcomes, how the model works. Math is secondary.
+    _DEFAULT_REFINE_PROMPT = """Describe what you want changed.  Examples:
 
-**Principles**
-* Explain *why + so what* before *how*.
-* Simple Equations only.
-* Map everything to business objects (borrower/loan/collateral/macro/outcomes).
-* Use toy examples and Python to make it real.
-* Almost always provide a mermaid diagram to illustrate the flow of data and decisions.
-* Try to provide memory aids like intuition, metaphors, and checklists to make it stick.
+* "Add a glossary of technical terms at the end of each section."
+* "Make every section shorter — maximum 200 words."
+* "Add more mermaid diagrams."
+* "Convert bullet lists into narrative paragraphs."
+* "Translate to Spanish."
+"""
 
-**Key points**
-1. **Purpose + output + where it fits** (CCAR/PPNR/loss models)
-2. **Narrative pipeline**: inputs → transforms → prediction → aggregation → reporting
-3. **Key variables** (plain English bullets)
-4. **Intuition/metaphor** (1–2 lines)
-5. **Python toy example** (tiny dataframe + simple model + 1 sanity check)
-6. **Mermaid diagrams like flow, sequence, etc** (conceptual, not math)"""
-
-    custom_prompt = st.text_area(
-        "Extra instructions for the LLM",
-        value=_DEFAULT_CUSTOM_PROMPT,
-        height=320,
-        help=(
+    _prompt_default = (
+        _DEFAULT_REFINE_PROMPT if mode == "refine" else _DEFAULT_REWRITE_PROMPT
+    )
+    _prompt_help = (
+        "Tell the LLM exactly how to edit the existing Markdown. "
+        "This is the core instruction for the refine pass."
+        if mode == "refine"
+        else (
             "These instructions are injected into the prompt alongside "
             "the default rewrite/summarize rules. Clear the box for defaults only."
-        ),
+        )
+    )
+
+    custom_prompt = st.text_area(
+        "Extra instructions for the LLM"
+        if mode != "refine"
+        else "Refine instructions (required)",
+        value=_prompt_default,
+        height=320,
+        help=_prompt_help,
     )
     # Treat empty string as None
     custom_prompt = custom_prompt.strip() or None
 
 
+# ── Source picker (PDF or existing Markdown depending on mode) ──────
+selected_path: str | None = None
+selected_name: str = ""
+
+if mode == "refine":
+    # Show existing rewrite outputs instead of PDFs
+    rewrite_outputs = discover_rewrite_outputs(DEFAULT_OUTPUT_DIR)
+    if not rewrite_outputs:
+        st.warning(
+            "No rewrite/summarize outputs found in `output/rewrites/`. "
+            "Run a rewrite or summarize first to create Markdown files."
+        )
+        st.stop()
+    md_names = list(rewrite_outputs.keys())
+    selected_name = st.selectbox("📄 Markdown to refine", md_names)
+    selected_path = rewrite_outputs[selected_name]
+else:
+    if not structured_pdfs:
+        st.warning(
+            "No structured PDFs found in `corpus/raw_data/`. "
+            "Download the corpus first with `uv run src/ingestion/downloader.py`."
+        )
+        st.stop()
+    pdf_names = list(structured_pdfs.keys())
+    selected_name = st.selectbox("📄 PDF to rewrite", pdf_names)
+    selected_path = structured_pdfs[selected_name]
+
+
 # ── Section preview ────────────────────────────────────────────────
-sections = _get_section_preview(selected_path)
-section_count = len(sections)
-subsection_count = sum(len(subs) for subs in sections.values())
+if mode == "refine":
+    # Parse the markdown to show sections
+    with open(selected_path, "r", encoding="utf-8") as _f:
+        _md_text = _f.read()
+    _md_sections = _split_markdown_sections(_md_text)
+    # Group subsections by section
+    _sec_map: dict[str, list[str]] = {}
+    for _s in _md_sections:
+        _sec_map.setdefault(_s["section"], []).append(_s["subsection"])
+    section_count = len(_sec_map)
+    subsection_count = len(_md_sections)
+else:
+    sections = _get_section_preview(selected_path)
+    _sec_map = sections
+    section_count = len(sections)
+    subsection_count = sum(len(subs) for subs in sections.values())
 
 col1, col2, col3 = st.columns(3)
 col1.metric("Sections", section_count)
@@ -211,11 +246,68 @@ with st.expander(
     f"📑 Sections in **{selected_name}**",
     expanded=False,
 ):
-    for sec, subs in sections.items():
+    for sec, subs in _sec_map.items():
         if subs:
             st.markdown(f"- **{sec}** — _{', '.join(subs)}_")
         else:
             st.markdown(f"- **{sec}**")
+
+
+# ── Section selection (checkboxes) ─────────────────────────────────
+if mode != "refine":
+    st.subheader("✅ Select sections/subsections to process")
+    st.caption("Only checked items will be rewritten or summarized.")
+else:
+    st.subheader("📋 Sections in this Markdown")
+    st.caption("Refine mode processes all sections in the file.")
+
+selected_sections: dict[str, list[str]] = {}
+
+if mode == "refine":
+    # Refine mode: process all sections
+    for sec in _sec_map.keys():
+        selected_sections[sec] = _sec_map[sec]
+else:
+    # Rewrite/summarize mode: use checkboxes
+    for sec, subs in _sec_map.items():
+        sec_key = f"selected_sec::{selected_name}::{sec}"
+        sec_checked = st.checkbox(
+            sec,
+            value=False,
+            key=sec_key,
+            help="Enable this section, then choose subsections below.",
+        )
+
+        if not sec_checked:
+            continue
+
+        if not subs:
+            selected_sections[sec] = []
+            continue
+
+        st.caption(f"Subsections for **{sec}**")
+        chosen_subsections: list[str] = []
+        for sub in subs:
+            sub_key = f"selected_sub::{selected_name}::{sec}::{sub}"
+            checked = st.checkbox(
+                f"↳ {sub}",
+                value=False,
+                key=sub_key,
+            )
+            if checked:
+                chosen_subsections.append(sub)
+
+        if chosen_subsections:
+            selected_sections[sec] = chosen_subsections
+
+if mode != "refine":
+    selected_subsection_count = sum(
+        len(subs) if subs else 1 for subs in selected_sections.values()
+    )
+    st.caption(
+        f"Selected: {len(selected_sections)} section(s), "
+        f"{selected_subsection_count} subsection target(s)."
+    )
 
 
 # ── Run button ──────────────────────────────────────────────────────
@@ -225,18 +317,28 @@ st.divider()
 if "rewrite_result" not in st.session_state:
     st.session_state.rewrite_result = None
 
+_run_label = (
+    f"🚀 {mode.title()} this Markdown"
+    if mode == "refine"
+    else f"🚀 {mode.title()} this PDF"
+)
+
 if st.button(
-    f"🚀 {mode.title()} this PDF",
+    _run_label,
     type="primary",
     use_container_width=True,
 ):
     if not model:
         st.error("Please select or enter a model name.")
         st.stop()
+    if mode == "refine" and not custom_prompt:
+        st.error("Please enter custom instructions for refining.")
+        st.stop()
+    if mode != "refine" and not selected_sections:
+        st.error("Please check at least one section/subsection to process.")
+        st.stop()
 
-    # Estimate total sections from the splitter (subsections + intro blocks)
-    # The actual count comes from rewrite_pdf_iter as it runs
-    progress_bar = st.progress(0, text="Loading PDF sections…")
+    progress_bar = st.progress(0, text="Loading sections…")
     status_container = st.status(
         f"📝 {mode.title()}ing with {provider}/{model}…",
         expanded=True,
@@ -264,15 +366,27 @@ if st.button(
         def _run_iter() -> None:
             """Push progress events onto the queue from a thread."""
             try:
-                for p in rewrite_pdf_iter(
-                    selected_path,
-                    provider=provider,
-                    model=model,
-                    temperature=temperature,
-                    mode=mode,
-                    custom_prompt=custom_prompt,
-                    output_dir=DEFAULT_OUTPUT_DIR,
-                ):
+                if mode == "refine":
+                    _iter = refine_markdown_iter(
+                        selected_path,
+                        provider=provider,
+                        model=model,
+                        temperature=temperature,
+                        custom_prompt=custom_prompt,
+                        output_dir=DEFAULT_OUTPUT_DIR,
+                    )
+                else:
+                    _iter = rewrite_pdf_iter(
+                        selected_path,
+                        provider=provider,
+                        model=model,
+                        temperature=temperature,
+                        mode=mode,
+                        custom_prompt=custom_prompt,
+                        output_dir=DEFAULT_OUTPUT_DIR,
+                        selected_sections=selected_sections,
+                    )
+                for p in _iter:
                     progress_q.put(p)
             except Exception as exc:
                 progress_q.put(exc)
