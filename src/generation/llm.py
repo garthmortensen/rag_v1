@@ -56,8 +56,25 @@ PROVIDER_DEFAULTS: dict[str, str] = {
 
 # ── Provider → curated model lists ─────────────────────────────────
 PROVIDER_MODELS: dict[str, list[str]] = {
-    "ollama": ["llama3.2:3b", "llama3.2:1b", "llama3.3:70b", "phi3", "mistral", "gemma2"],
-    "openai": ["gpt-5.2", "gpt-5.2-pro", "gpt-5-mini", "gpt-5-nano", "gpt-5", "gpt-4.1", "gpt-4.1-mini", "o4-mini", "o3-mini"],
+    "ollama": [
+        "llama3.2:3b",
+        "llama3.2:1b",
+        "llama3.3:70b",
+        "phi3",
+        "mistral",
+        "gemma2",
+    ],
+    "openai": [
+        "gpt-5.2",
+        "gpt-5.2-pro",
+        "gpt-5-mini",
+        "gpt-5-nano",
+        "gpt-5",
+        "gpt-4.1",
+        "gpt-4.1-mini",
+        "o4-mini",
+        "o3-mini",
+    ],
     "anthropic": ["claude-opus-4-6", "claude-sonnet-4-5", "claude-haiku-4-5"],
     "google": ["gemini-3-pro", "gemini-3-flash", "gemini-2.5-pro", "gemini-2.5-flash"],
 }
@@ -78,13 +95,16 @@ SYSTEM_PROMPT = textwrap.dedent("""\
 
 
 # ── Chat prompt template (LangChain) ───────────────────────────────
-RAG_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", SYSTEM_PROMPT),
-    ("human", "CONTEXT:\n{context}\n\nQUESTION:\n{question}\n\nANSWER:"),
-])
+RAG_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", SYSTEM_PROMPT),
+        ("human", "CONTEXT:\n{context}\n\nQUESTION:\n{question}\n\nANSWER:"),
+    ]
+)
 
 
 # ── Context formatter ──────────────────────────────────────────────
+
 
 def format_context(chunks: list[dict]) -> str:
     """Format retrieved chunks into a context block for the prompt.
@@ -104,13 +124,12 @@ def format_context(chunks: list[dict]) -> str:
     for chunk in chunks:
         title = chunk["metadata"].get("title", "Unknown")
         source = chunk["metadata"].get("source", "Unknown")
-        context_parts.append(
-            f"[Source: {title} | {source}]\n{chunk['text']}"
-        )
+        context_parts.append(f"[Source: {title} | {source}]\n{chunk['text']}")
     return "\n\n---\n\n".join(context_parts)
 
 
 # ── LLM interaction ─────────────────────────────────────────────────
+
 
 def get_llm(
     model: str = DEFAULT_MODEL,
@@ -180,12 +199,12 @@ def get_llm(
         return ChatGoogleGenerativeAI(model=model, temperature=temperature)
 
     raise ValueError(
-        f"Unknown llm_provider '{provider}'. "
-        f"Supported: {', '.join(PROVIDER_DEFAULTS)}"
+        f"Unknown llm_provider '{provider}'. Supported: {', '.join(PROVIDER_DEFAULTS)}"
     )
 
 
 # ── LCEL chain ──────────────────────────────────────────────────────
+
 
 def rag_chain(
     model: str = DEFAULT_MODEL,
@@ -207,6 +226,7 @@ def rag_chain(
 
 
 # ── Generate ────────────────────────────────────────────────────────
+
 
 def generate_answer(
     query: str,
@@ -249,7 +269,9 @@ def generate_answer(
 
     try:
         chain = rag_chain(
-            model=model, temperature=temperature, provider=provider,
+            model=model,
+            temperature=temperature,
+            provider=provider,
         )
         context_block = format_context(chunks)
         answer = chain.invoke({"context": context_block, "question": query})
@@ -274,6 +296,7 @@ def generate_answer(
 
 
 # ── Streaming (for Streamlit) ───────────────────────────────────────
+
 
 def stream_answer(
     query: str,
@@ -301,7 +324,9 @@ def stream_answer(
         Token-by-token chunks of the answer.
     """
     chain = rag_chain(
-        model=model, temperature=temperature, provider=provider,
+        model=model,
+        temperature=temperature,
+        provider=provider,
     )
     context_block = format_context(chunks)
 
@@ -311,6 +336,3 @@ def stream_answer(
     )
 
     yield from chain.stream({"context": context_block, "question": query})
-
-
-

@@ -21,16 +21,14 @@ from src.generation.llm import (
     rag_chain,
     stream_answer,
     RAG_PROMPT,
-    SYSTEM_PROMPT,
     DEFAULT_MODEL,
     DEFAULT_PROVIDER,
     DEFAULT_TEMPERATURE,
-    DEFAULT_TOP_K,
-    PROVIDER_DEFAULTS,
 )
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
+
 
 def _fake_chunks(n: int = 3) -> list[dict]:
     """Build a list of fake retrieve_formatted() results."""
@@ -75,8 +73,9 @@ class TestFormatContext(unittest.TestCase):
 
     def test_missing_metadata_keys(self):
         """Falls back to 'Unknown' when title/source are missing."""
-        chunks = [{"rank": 1, "id": "x", "distance": 0.1,
-                    "text": "txt", "metadata": {}}]
+        chunks = [
+            {"rank": 1, "id": "x", "distance": 0.1, "text": "txt", "metadata": {}}
+        ]
         result = format_context(chunks)
         self.assertIn("Unknown", result)
 
@@ -87,7 +86,8 @@ class TestRAGPrompt(unittest.TestCase):
     def test_format_messages_returns_two(self):
         """RAG_PROMPT produces exactly a system + human message."""
         messages = RAG_PROMPT.format_messages(
-            context="some context", question="some question",
+            context="some context",
+            question="some question",
         )
         self.assertEqual(len(messages), 2)
         self.assertEqual(messages[0].type, "system")
@@ -96,7 +96,8 @@ class TestRAGPrompt(unittest.TestCase):
     def test_context_and_question_injected(self):
         """The human message contains the supplied context and question."""
         messages = RAG_PROMPT.format_messages(
-            context="CTX_VALUE", question="Q_VALUE",
+            context="CTX_VALUE",
+            question="Q_VALUE",
         )
         self.assertIn("CTX_VALUE", messages[1].content)
         self.assertIn("Q_VALUE", messages[1].content)
@@ -148,7 +149,8 @@ class TestGenerateAnswer(unittest.TestCase):
         """The RAG_PROMPT formats system + human messages correctly."""
         # Test the prompt template directly (no LLM needed)
         messages = RAG_PROMPT.format_messages(
-            context="some context", question="some question",
+            context="some context",
+            question="some question",
         )
         self.assertEqual(len(messages), 2)
         self.assertEqual(messages[0].type, "system")

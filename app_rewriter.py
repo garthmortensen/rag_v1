@@ -49,18 +49,14 @@ DEFAULT_MODEL = str(CFG.get("llm_model", "llama3.2:3b"))
 
 # ── Discover structured PDFs (cached) ──────────────────────────────
 
+
 @st.cache_data(show_spinner="Scanning PDFs…")
 def _discover_structured_pdfs(raw_dir: str) -> dict[str, str]:
     """Return {display_name: filepath} for PDFs with section headers."""
     result: dict[str, str] = {}
     for pdf in sorted(glob.glob(os.path.join(raw_dir, "*.pdf"))):
         if has_section_headers(pdf):
-            short = (
-                os.path.basename(pdf)
-                .replace(".pdf", "")
-                .replace("_", " ")
-                .title()
-            )
+            short = os.path.basename(pdf).replace(".pdf", "").replace("_", " ").title()
             result[short] = pdf
     return result
 
@@ -72,6 +68,7 @@ def _get_section_preview(filepath: str) -> dict[str, list[str]]:
 
 
 # ── Copy helpers ────────────────────────────────────────────────────
+
 
 def _copy_button(text: str, label: str, key: str) -> None:
     """Render a single-click copy-to-clipboard button."""
@@ -95,8 +92,7 @@ structured_pdfs = _discover_structured_pdfs(RAW_DIR)
 # ── Title ───────────────────────────────────────────────────────────
 st.title("📝 PDF Rewriter")
 st.caption(
-    "Rewrite structured model documentation PDFs in plain English, "
-    "section by section."
+    "Rewrite structured model documentation PDFs in plain English, section by section."
 )
 
 
@@ -135,9 +131,7 @@ with st.sidebar:
         else PROVIDER_DEFAULTS.get(provider, "")
     )
     default_model_idx = (
-        model_options.index(default_model)
-        if default_model in model_options
-        else 0
+        model_options.index(default_model) if default_model in model_options else 0
     )
     model_choice = st.selectbox("Model", display_options, index=default_model_idx)
     if model_choice == "Other…":
@@ -444,9 +438,7 @@ if st.button(
                 # phase == "rewriting" — section finished
                 last_progress = progress
 
-                sec_elapsed = (
-                    time.time() - section_start if section_start else 0
-                )
+                sec_elapsed = time.time() - section_start if section_start else 0
                 sec_m, sec_s = divmod(int(sec_elapsed), 60)
                 section_start = None
                 active_label = ""

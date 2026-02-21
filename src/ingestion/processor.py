@@ -7,7 +7,6 @@ ChromaDB collection at corpus/vector_db/.
 """
 
 import logging
-import sys
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -48,7 +47,9 @@ def chunk_documents(
         length_function=len,  # count characters (default)
     )
     chunks = splitter.split_documents(docs)
-    logger.info(f"Split {len(docs)} document(s) into {len(chunks)} chunk(s)  (size={chunk_size}, overlap={chunk_overlap})")
+    logger.info(
+        f"Split {len(docs)} document(s) into {len(chunks)} chunk(s)  (size={chunk_size}, overlap={chunk_overlap})"
+    )
     return chunks
 
 
@@ -74,7 +75,9 @@ def run(
     docs = load_directory()
 
     if not docs:
-        logger.warning("No documents were loaded. Check corpus/raw_data/ for supported files.")
+        logger.warning(
+            "No documents were loaded. Check corpus/raw_data/ for supported files."
+        )
         return docs
 
     # Log a breakdown by source file

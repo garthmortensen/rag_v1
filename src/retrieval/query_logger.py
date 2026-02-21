@@ -229,9 +229,7 @@ def log_rewrite_session(
         # ── Per-section details ─────────────────────────────────────
         if sections:
             for i, sec in enumerate(sections, 1):
-                fh.write(
-                    f"[{i}/{total}] {sec.section} › {sec.subsection}\n"
-                )
+                fh.write(f"[{i}/{total}] {sec.section} › {sec.subsection}\n")
                 fh.write(f"  Source chars:    {sec.source_chars:,}\n")
                 fh.write(f"  Rewritten chars: {sec.rewritten_chars:,}\n")
                 fh.write(f"  Rewritten text:\n{sec.rewritten_text}\n")

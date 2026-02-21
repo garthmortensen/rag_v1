@@ -132,6 +132,4 @@ def log_system_info() -> None:
     )
 
     model = select_best_model(available_mb)
-    logger.info(
-        f"Recommended model: {model['name']} — {model['description']}"
-    )
+    logger.info(f"Recommended model: {model['name']} — {model['description']}")

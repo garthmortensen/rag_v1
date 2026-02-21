@@ -26,12 +26,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from src.retrieval.query import (
     retrieve,
     retrieve_formatted,
-    DEFAULT_TOP_K,
 )
-from src.embedding.model import COLLECTION_NAME, VECTOR_DB_DIR
+from src.embedding.model import VECTOR_DB_DIR
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
+
 
 def _mock_query_results(n: int = 3) -> dict:
     """Build a fake ChromaDB query result dict with *n* hits."""
@@ -54,6 +54,7 @@ def _mock_query_results(n: int = 3) -> dict:
 
 
 # ── Unit Tests (mocked) ────────────────────────────────────────────
+
 
 class TestRetrievalUnit(unittest.TestCase):
     """Fast, mocked tests for retrieve() and retrieve_formatted()."""
@@ -141,9 +142,7 @@ class TestRetrievalUnit(unittest.TestCase):
 
     @patch("src.retrieval.query.get_or_create_collection")
     @patch("src.retrieval.query.get_embedding_function")
-    def test_retrieve_formatted_returns_list_of_dicts(
-        self, mock_get_emb, mock_get_col
-    ):
+    def test_retrieve_formatted_returns_list_of_dicts(self, mock_get_emb, mock_get_col):
         """retrieve_formatted() should return a list of dicts with expected keys."""
         mock_embedding_fn = MagicMock()
         mock_embedding_fn.embed_query.return_value = [0.0] * 384
@@ -167,9 +166,7 @@ class TestRetrievalUnit(unittest.TestCase):
 
     @patch("src.retrieval.query.get_or_create_collection")
     @patch("src.retrieval.query.get_embedding_function")
-    def test_retrieve_formatted_ranks_are_sequential(
-        self, mock_get_emb, mock_get_col
-    ):
+    def test_retrieve_formatted_ranks_are_sequential(self, mock_get_emb, mock_get_col):
         """Ranks should be 1, 2, 3, … matching the order returned by ChromaDB."""
         mock_embedding_fn = MagicMock()
         mock_embedding_fn.embed_query.return_value = [0.0] * 384
@@ -201,6 +198,7 @@ class TestRetrievalUnit(unittest.TestCase):
 
 # ── Integration Tests (live vector DB) ──────────────────────────────
 
+
 class TestRetrievalIntegration(unittest.TestCase):
     """Query the live vector DB and verify results are relevant.
 
@@ -217,6 +215,7 @@ class TestRetrievalIntegration(unittest.TestCase):
             )
 
         from src.retrieval.query import retrieve as _retrieve
+
         # Quick probe to make sure the collection is populated
         try:
             probe = _retrieve("test", n_results=1)
@@ -268,9 +267,7 @@ class TestRetrievalIntegration(unittest.TestCase):
     def test_top_result_distance_is_reasonable(self):
         """The closest match for a domain-specific query should have
         a relatively small distance (< 1.5 for L2 / cosine on MiniLM)."""
-        results = retrieve_formatted(
-            "severely adverse scenario unemployment rate peak"
-        )
+        results = retrieve_formatted("severely adverse scenario unemployment rate peak")
         self.assertLess(
             results[0]["distance"],
             1.5,

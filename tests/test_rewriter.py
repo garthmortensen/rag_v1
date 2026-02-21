@@ -129,7 +129,10 @@ class TestInvokeLlm(unittest.TestCase):
         """Should handle Anthropic-style list-of-dicts content blocks."""
         llm = MagicMock()
         msg = MagicMock()
-        msg.content = [{"type": "text", "text": "Block one."}, {"type": "text", "text": "Block two."}]
+        msg.content = [
+            {"type": "text", "text": "Block one."},
+            {"type": "text", "text": "Block two."},
+        ]
         llm.invoke.return_value = msg
         result = _invoke_llm(llm, "{text}", "input")
         self.assertIn("Block one.", result)
@@ -271,8 +274,11 @@ class TestRewritePdf(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             result = rewrite_pdf(
-                "test.pdf", output_dir=tmpdir, mode="summarize",
-                provider="ollama", model="test",
+                "test.pdf",
+                output_dir=tmpdir,
+                mode="summarize",
+                provider="ollama",
+                model="test",
             )
             with open(result) as f:
                 content = f.read()
@@ -339,9 +345,7 @@ class TestRewritePdf(unittest.TestCase):
         mock_get_llm.return_value = mock_llm
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            rewrite_pdf(
-                "test.pdf", output_dir=tmpdir, provider="ollama", model="test"
-            )
+            rewrite_pdf("test.pdf", output_dir=tmpdir, provider="ollama", model="test")
 
         # 3 sections × 2 LLM calls each (rewrite + summary) = 6
         self.assertEqual(mock_llm.invoke.call_count, 6)
@@ -464,7 +468,10 @@ class TestRewritePdf(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             result = rewrite_pdf(
-                "test.pdf", output_dir=tmpdir, provider="ollama", model="test",
+                "test.pdf",
+                output_dir=tmpdir,
+                provider="ollama",
+                model="test",
                 mode="summarize",
             )
             with open(result) as f:
@@ -563,8 +570,10 @@ class TestCLI(unittest.TestCase):
         with patch(
             "sys.argv",
             [
-                "rewriter", "test.pdf",
-                "--custom-prompt", "Write at an elementary-school level.",
+                "rewriter",
+                "test.pdf",
+                "--custom-prompt",
+                "Write at an elementary-school level.",
             ],
         ):
             main()
@@ -591,10 +600,7 @@ class TestSplitMarkdownSections(unittest.TestCase):
         self.assertIn("Section B", sections)
 
     def test_splits_on_h3_subsections(self):
-        md = (
-            "## Section A\n\n### Sub 1\n\nBody 1\n\n"
-            "### Sub 2\n\nBody 2\n"
-        )
+        md = "## Section A\n\n### Sub 1\n\nBody 1\n\n### Sub 2\n\nBody 2\n"
         result = _split_markdown_sections(md)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0]["subsection"], "Sub 1")
@@ -701,13 +707,15 @@ class TestRefineMarkdownIter(unittest.TestCase):
             with open(src_path, "w") as f:
                 f.write(self._SAMPLE_MD)
 
-            events = list(refine_markdown_iter(
-                src_path,
-                provider="ollama",
-                model="test",
-                custom_prompt="Make it shorter.",
-                output_dir=tmpdir,
-            ))
+            events = list(
+                refine_markdown_iter(
+                    src_path,
+                    provider="ollama",
+                    model="test",
+                    custom_prompt="Make it shorter.",
+                    output_dir=tmpdir,
+                )
+            )
 
             # Should end with a "done" event
             done = [e for e in events if e.phase == "done"]
@@ -729,13 +737,15 @@ class TestRefineMarkdownIter(unittest.TestCase):
             with open(src_path, "w") as f:
                 f.write(self._SAMPLE_MD)
 
-            events = list(refine_markdown_iter(
-                src_path,
-                provider="ollama",
-                model="test",
-                custom_prompt="Fix typos.",
-                output_dir=tmpdir,
-            ))
+            events = list(
+                refine_markdown_iter(
+                    src_path,
+                    provider="ollama",
+                    model="test",
+                    custom_prompt="Fix typos.",
+                    output_dir=tmpdir,
+                )
+            )
 
             phases = [e.phase for e in events]
             self.assertIn("processing", phases)
@@ -744,11 +754,13 @@ class TestRefineMarkdownIter(unittest.TestCase):
 
     def test_rejects_missing_file(self):
         with self.assertRaises(FileNotFoundError):
-            list(refine_markdown_iter(
-                "/nonexistent/path.md",
-                provider="ollama",
-                model="test",
-            ))
+            list(
+                refine_markdown_iter(
+                    "/nonexistent/path.md",
+                    provider="ollama",
+                    model="test",
+                )
+            )
 
     @patch("src.generation.rewriter.get_llm")
     def test_config_file_records_refine_mode(self, mock_get_llm):
@@ -759,13 +771,15 @@ class TestRefineMarkdownIter(unittest.TestCase):
             with open(src_path, "w") as f:
                 f.write(self._SAMPLE_MD)
 
-            events = list(refine_markdown_iter(
-                src_path,
-                provider="ollama",
-                model="test",
-                custom_prompt="Add glossary.",
-                output_dir=tmpdir,
-            ))
+            events = list(
+                refine_markdown_iter(
+                    src_path,
+                    provider="ollama",
+                    model="test",
+                    custom_prompt="Add glossary.",
+                    output_dir=tmpdir,
+                )
+            )
 
             done = [e for e in events if e.phase == "done"]
             config_path = os.path.join(
@@ -786,13 +800,15 @@ class TestRefineMarkdownIter(unittest.TestCase):
             with open(src_path, "w") as f:
                 f.write(self._SAMPLE_MD)
 
-            events = list(refine_markdown_iter(
-                src_path,
-                provider="ollama",
-                model="test",
-                custom_prompt="Fix.",
-                output_dir=tmpdir,
-            ))
+            events = list(
+                refine_markdown_iter(
+                    src_path,
+                    provider="ollama",
+                    model="test",
+                    custom_prompt="Fix.",
+                    output_dir=tmpdir,
+                )
+            )
             done = [e for e in events if e.phase == "done"]
             basename = os.path.basename(done[0].output_path)
             self.assertIn("my_doc_refine.md", basename)

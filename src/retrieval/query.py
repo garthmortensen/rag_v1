@@ -31,6 +31,7 @@ DEFAULT_TOP_K = 5
 
 # ── Core ────────────────────────────────────────────────────────────
 
+
 def retrieve(
     query: str,
     n_results: int = DEFAULT_TOP_K,
@@ -82,10 +83,7 @@ def retrieve(
 
     n_returned = len(results["ids"][0])
     best_dist = results["distances"][0][0] if n_returned else float("inf")
-    logger.info(
-        f"Retrieved {n_returned} result(s)  "
-        f"(best distance: {best_dist:.4f})"
-    )
+    logger.info(f"Retrieved {n_returned} result(s)  (best distance: {best_dist:.4f})")
     return results
 
 

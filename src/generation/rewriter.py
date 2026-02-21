@@ -127,9 +127,7 @@ def _build_prompt(mode: str, custom_prompt: str | None = None) -> str:
 
     base = REWRITE_PROMPT if mode == "rewrite" else SUMMARIZE_PROMPT
     if custom_prompt:
-        instructions = (
-            f"\nADDITIONAL INSTRUCTIONS:\n{custom_prompt.strip()}\n"
-        )
+        instructions = f"\nADDITIONAL INSTRUCTIONS:\n{custom_prompt.strip()}\n"
     else:
         instructions = ""
     return base.replace("{custom_instructions}", instructions)
@@ -346,8 +344,7 @@ def rewrite_pdf(
             # Subsection heading
             fh.write(f"### {subsection}\n")
             fh.write(
-                f"*Pages {start_page}–{end_page} | "
-                f"{len(doc.page_content):,} chars*\n\n"
+                f"*Pages {start_page}–{end_page} | {len(doc.page_content):,} chars*\n\n"
             )
 
             # Rewrite via LLM
@@ -367,13 +364,15 @@ def rewrite_pdf(
             fh.write("\n\n---\n\n")
             fh.flush()
 
-            section_logs.append(RewriteSectionLog(
-                section=section,
-                subsection=subsection,
-                source_chars=len(doc.page_content),
-                rewritten_chars=len(rewritten),
-                rewritten_text=rewritten,
-            ))
+            section_logs.append(
+                RewriteSectionLog(
+                    section=section,
+                    subsection=subsection,
+                    source_chars=len(doc.page_content),
+                    rewritten_chars=len(rewritten),
+                    rewritten_text=rewritten,
+                )
+            )
 
     elapsed = time.time() - t0
     logger.info(f"✅ Wrote {out_path}")
@@ -401,13 +400,13 @@ def rewrite_pdf(
 class RewriteProgress:
     """Progress update yielded by :func:`rewrite_pdf_iter`."""
 
-    step: int          # 1-based index of the current section
-    total: int         # total number of sections
-    section: str       # top-level section name
-    subsection: str    # subsection name being processed
-    chars: int         # character count of the source text
-    rewritten: str     # the rewritten text for this section
-    phase: str         # "loading" | "rewriting" | "done"
+    step: int  # 1-based index of the current section
+    total: int  # total number of sections
+    section: str  # top-level section name
+    subsection: str  # subsection name being processed
+    chars: int  # character count of the source text
+    rewritten: str  # the rewritten text for this section
+    phase: str  # "loading" | "rewriting" | "done"
     output_path: str | None = None  # set only when phase == "done"
 
 
@@ -507,8 +506,7 @@ def rewrite_pdf_iter(
 
             fh.write(f"### {subsection}\n")
             fh.write(
-                f"*Pages {start_page}–{end_page} | "
-                f"{len(doc.page_content):,} chars*\n\n"
+                f"*Pages {start_page}–{end_page} | {len(doc.page_content):,} chars*\n\n"
             )
 
             # Signal that we're about to process this section
@@ -534,13 +532,15 @@ def rewrite_pdf_iter(
             fh.write("\n\n---\n\n")
             fh.flush()
 
-            section_logs.append(RewriteSectionLog(
-                section=section,
-                subsection=subsection,
-                source_chars=len(doc.page_content),
-                rewritten_chars=len(rewritten),
-                rewritten_text=rewritten,
-            ))
+            section_logs.append(
+                RewriteSectionLog(
+                    section=section,
+                    subsection=subsection,
+                    source_chars=len(doc.page_content),
+                    rewritten_chars=len(rewritten),
+                    rewritten_text=rewritten,
+                )
+            )
 
             yield RewriteProgress(
                 step=i,
@@ -604,11 +604,13 @@ def _split_markdown_sections(text: str) -> list[dict[str, str]]:
             if current_body:
                 body_text = "".join(current_body).strip()
                 if body_text and body_text.replace("-", "").strip():
-                    sections.append({
-                        "section": current_section,
-                        "subsection": current_subsection,
-                        "body": body_text,
-                    })
+                    sections.append(
+                        {
+                            "section": current_section,
+                            "subsection": current_subsection,
+                            "body": body_text,
+                        }
+                    )
                 current_body = []
             section_name = line.lstrip("# ").strip()
             # Skip synthetic section names from the parser itself
@@ -622,11 +624,13 @@ def _split_markdown_sections(text: str) -> list[dict[str, str]]:
             if current_body:
                 body_text = "".join(current_body).strip()
                 if body_text and body_text.replace("-", "").strip():
-                    sections.append({
-                        "section": current_section,
-                        "subsection": current_subsection,
-                        "body": body_text,
-                    })
+                    sections.append(
+                        {
+                            "section": current_section,
+                            "subsection": current_subsection,
+                            "body": body_text,
+                        }
+                    )
                 current_body = []
             subsection_name = line.lstrip("# ").strip()
             # Skip synthetic subsection names
@@ -640,11 +644,13 @@ def _split_markdown_sections(text: str) -> list[dict[str, str]]:
     if current_body:
         body_text = "".join(current_body).strip()
         if body_text and body_text.replace("-", "").strip():
-            sections.append({
-                "section": current_section,
-                "subsection": current_subsection,
-                "body": body_text,
-            })
+            sections.append(
+                {
+                    "section": current_section,
+                    "subsection": current_subsection,
+                    "body": body_text,
+                }
+            )
 
     return sections
 
@@ -663,18 +669,14 @@ def discover_rewrite_outputs(output_dir: str = DEFAULT_OUTPUT_DIR) -> dict[str, 
         return results
 
     # Timestamped sub-dirs (YYYYMMDD_HHMM/<name>.md)
-    for md in sorted(
-        _glob.glob(os.path.join(output_dir, "*", "*.md")), reverse=True
-    ):
+    for md in sorted(_glob.glob(os.path.join(output_dir, "*", "*.md")), reverse=True):
         dirname = os.path.basename(os.path.dirname(md))
         fname = os.path.basename(md)
         label = f"{dirname} / {fname}"
         results[label] = md
 
     # Top-level .md files
-    for md in sorted(
-        _glob.glob(os.path.join(output_dir, "*.md")), reverse=True
-    ):
+    for md in sorted(_glob.glob(os.path.join(output_dir, "*.md")), reverse=True):
         results[os.path.basename(md)] = md
 
     return results
@@ -725,9 +727,7 @@ def refine_markdown_iter(
     run_dir = os.path.join(output_dir, timestamp)
     os.makedirs(run_dir, exist_ok=True)
 
-    out_path = os.path.abspath(
-        os.path.join(run_dir, f"{basename}_refine.md")
-    )
+    out_path = os.path.abspath(os.path.join(run_dir, f"{basename}_refine.md"))
 
     # ── Write config.txt ────────────────────────────────────────────
     config_path = os.path.join(run_dir, "config.txt")
@@ -779,13 +779,15 @@ def refine_markdown_iter(
             fh.write("\n\n---\n\n")
             fh.flush()
 
-            section_logs.append(RewriteSectionLog(
-                section=section,
-                subsection=subsection,
-                source_chars=len(body),
-                rewritten_chars=len(rewritten),
-                rewritten_text=rewritten,
-            ))
+            section_logs.append(
+                RewriteSectionLog(
+                    section=section,
+                    subsection=subsection,
+                    source_chars=len(body),
+                    rewritten_chars=len(rewritten),
+                    rewritten_text=rewritten,
+                )
+            )
 
             yield RewriteProgress(
                 step=i,
@@ -852,9 +854,7 @@ def _rewrite_chunk(llm, prompt_template: str, text: str) -> str:
 
     # Split into blocks that fit within the context window
     blocks = _split_on_paragraphs(text, MAX_CHUNK_CHARS)
-    logger.debug(
-        f"  Split {len(text):,} chars into {len(blocks)} block(s)"
-    )
+    logger.debug(f"  Split {len(text):,} chars into {len(blocks)} block(s)")
     rewritten_parts = [_invoke_llm(llm, prompt_template, block) for block in blocks]
     return "\n\n".join(rewritten_parts)
 
@@ -870,9 +870,7 @@ def _invoke_llm(llm, prompt_template: str, text: str) -> str:
         content = response.content
         if isinstance(content, list):
             content = "\n".join(
-                block.get("text", str(block))
-                if isinstance(block, dict)
-                else str(block)
+                block.get("text", str(block)) if isinstance(block, dict) else str(block)
                 for block in content
             )
         return content.strip()
@@ -912,6 +910,7 @@ def _split_on_paragraphs(text: str, max_chars: int) -> list[str]:
 
 
 # ── CLI entry point ─────────────────────────────────────────────────
+
 
 def main() -> None:
     """Parse CLI arguments and run the rewriter."""

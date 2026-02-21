@@ -10,7 +10,11 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.retrieval.query_logger import log_query_session, log_rewrite_session, RewriteSectionLog
+from src.retrieval.query_logger import (
+    log_query_session,
+    log_rewrite_session,
+    RewriteSectionLog,
+)
 
 
 def _sample_results(n: int = 2) -> list[dict]:

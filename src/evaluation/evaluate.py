@@ -23,7 +23,6 @@ The results table is printed to stdout and, optionally, saved to CSV.
 
 import argparse
 import logging
-import sys
 
 import pandas as pd
 from ragas import EvaluationDataset, SingleTurnSample, evaluate
@@ -50,6 +49,7 @@ console = Console()
 
 
 # ── Build ragas evaluation dataset from pipeline outputs ────────────
+
 
 def build_eval_dataset(
     n_results: int = DEFAULT_TOP_K,
@@ -90,7 +90,10 @@ def build_eval_dataset(
         # Generate
         try:
             answer = generate_answer(
-                question, chunks, model=model, provider=provider,
+                question,
+                chunks,
+                model=model,
+                provider=provider,
             )
         except Exception as exc:
             logger.warning(f"Generation failed for Q{i}: {exc}")
@@ -109,6 +112,7 @@ def build_eval_dataset(
 
 
 # ── Run evaluation ──────────────────────────────────────────────────
+
 
 def run_evaluation(
     n_results: int = DEFAULT_TOP_K,
@@ -136,13 +140,13 @@ def run_evaluation(
     """
     console.print("\n[bold cyan]Building evaluation dataset…[/bold cyan]")
     dataset = build_eval_dataset(
-        n_results=n_results, model=model, provider=provider,
+        n_results=n_results,
+        model=model,
+        provider=provider,
     )
 
     # Use the same LLM as the judge
-    evaluator_llm = LangchainLLMWrapper(
-        get_llm(model=model, provider=provider)
-    )
+    evaluator_llm = LangchainLLMWrapper(get_llm(model=model, provider=provider))
 
     metrics = [
         Faithfulness(llm=evaluator_llm),
@@ -168,7 +172,11 @@ def run_evaluation(
     console.print(table)
 
     # Summary
-    metric_cols = [c for c in df.columns if c not in ("user_input", "response", "retrieved_contexts", "reference")]
+    metric_cols = [
+        c
+        for c in df.columns
+        if c not in ("user_input", "response", "retrieved_contexts", "reference")
+    ]
     if metric_cols:
         console.print("\n[bold]Averages:[/bold]")
         for col in metric_cols:
@@ -187,25 +195,34 @@ def run_evaluation(
 
 # ── CLI ─────────────────────────────────────────────────────────────
 
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="python -m src.evaluation.evaluate",
         description="Run ragas evaluation on the RAG pipeline.",
     )
     parser.add_argument(
-        "--top-k", type=int, default=DEFAULT_TOP_K,
+        "--top-k",
+        type=int,
+        default=DEFAULT_TOP_K,
         help=f"Top-K retrieval (default: {DEFAULT_TOP_K})",
     )
     parser.add_argument(
-        "--model", type=str, default=DEFAULT_MODEL,
+        "--model",
+        type=str,
+        default=DEFAULT_MODEL,
         help=f"LLM model (default: {DEFAULT_MODEL})",
     )
     parser.add_argument(
-        "--provider", type=str, default=DEFAULT_PROVIDER,
+        "--provider",
+        type=str,
+        default=DEFAULT_PROVIDER,
         help=f"LLM provider (default: {DEFAULT_PROVIDER})",
     )
     parser.add_argument(
-        "--out", type=str, default=None,
+        "--out",
+        type=str,
+        default=None,
         help="Save results to a CSV file",
     )
     args = parser.parse_args(argv)

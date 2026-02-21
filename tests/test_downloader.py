@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch, mock_open, MagicMock
 
+import requests
 # Ensure we can import the module from the project root
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -46,6 +47,24 @@ class TestDownloadData(unittest.TestCase):
         self.assertIn("User-Agent", headers)
         self.assertTrue(len(headers["User-Agent"]) > 0)
 
+    def test_capture_metadata_from_file_sets_size(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = os.path.join(td, "doc.pdf")
+            with open(path, "wb") as f:
+                f.write(b"%PDF-1.4\n")
+
+            md = downloader.capture_metadata_from_file(
+                filepath=path,
+                filetype="pdf",
+                url="https://example.com/doc.pdf",
+                name="Example",
+                category="Cat",
+                source_org="Org",
+            )
+
+            self.assertEqual(md["local_path"], path)
+            self.assertEqual(md["content_length_bytes"], str(os.path.getsize(path)))
+
     @patch("src.ingestion.downloader.os.makedirs")
     @patch("src.ingestion.downloader.os.path.exists")
     def test_ensure_directory_creates_if_not_exists(self, mock_exists, mock_makedirs):
@@ -62,7 +81,9 @@ class TestDownloadData(unittest.TestCase):
 
     @patch("src.ingestion.downloader.save_metadata")
     @patch("src.ingestion.downloader.load_existing_metadata", return_value={})
-    @patch("src.ingestion.downloader.console.print")  # Mock console to keep output clean
+    @patch(
+        "src.ingestion.downloader.console.print"
+    )  # Mock console to keep output clean
     @patch("builtins.open", new_callable=mock_open)
     @patch("src.ingestion.downloader.os.path.exists")
     def test_download_files_no_csv(
@@ -102,7 +123,7 @@ class TestDownloadData(unittest.TestCase):
         mock_exists.return_value = False  # File doesn't exist, so download
 
         mock_response = MagicMock()
-        mock_response.content = b"fake pdf content"
+        mock_response.iter_content.return_value = [b"fake ", b"pdf ", b"content"]
         mock_response.raise_for_status = MagicMock()
         mock_response.headers = {
             "Last-Modified": "Wed, 01 Jan 2026 00:00:00 GMT",
@@ -114,16 +135,20 @@ class TestDownloadData(unittest.TestCase):
         mock_get_session.return_value = mock_session
 
         # Execute
-        downloader.download_files()
+        with patch("src.ingestion.downloader._write_response_to_file") as mock_write:
+            downloader.download_files()
 
         # Assertions
         mock_ensure.assert_called_with(downloader.DEFAULT_DIR)
-        mock_session.get.assert_called_with("http://example.com", timeout=30)
+        mock_session.get.assert_called_with(
+            "http://example.com",
+            timeout=60,
+            stream=True,
+        )
 
         expected_path = os.path.join(downloader.DEFAULT_DIR, "testcat_testdoc.pdf")
-        file_handle = mock_file()
-        file_handle.write.assert_called()
-        mock_file.assert_any_call(expected_path, "wb")
+        mock_write.assert_called_once()
+        self.assertEqual(mock_write.call_args[0][1], expected_path)
 
         # Verify metadata was saved
         mock_save_meta.assert_called_once()
@@ -138,6 +163,47 @@ class TestDownloadData(unittest.TestCase):
 
     @patch("src.ingestion.downloader.save_metadata")
     @patch("src.ingestion.downloader.load_existing_metadata", return_value={})
+    @patch("src.ingestion.downloader.polite_sleep")
+    @patch("src.ingestion.downloader.get_session")
+    @patch("src.ingestion.downloader.os.path.exists")
+    @patch("src.ingestion.downloader.ensure_directory")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data="Category,Name,Link,Filetype\nTestCat,TestDoc,http://example.com,pdf",
+    )
+    def test_download_files_fallback_wget(
+        self,
+        mock_file,
+        mock_ensure,
+        mock_exists,
+        mock_get_session,
+        mock_sleep,
+        mock_load_meta,
+        mock_save_meta,
+    ):
+        mock_exists.return_value = False
+
+        mock_session = MagicMock()
+        mock_session.headers = downloader.get_headers()
+        mock_session.get.side_effect = requests.exceptions.ConnectionError(
+            "RemoteDisconnected"
+        )
+        mock_get_session.return_value = mock_session
+
+        with patch(
+            "src.ingestion.downloader._download_with_wget", return_value=True
+        ) as mock_wget:
+            with patch(
+                "src.ingestion.downloader._download_with_curl", return_value=False
+            ) as mock_curl:
+                downloader.download_files()
+
+        mock_wget.assert_called_once()
+        mock_curl.assert_not_called()
+        mock_save_meta.assert_called_once()
+    @patch("src.ingestion.downloader.save_metadata")
+    @patch("src.ingestion.downloader.load_existing_metadata", return_value={})
     @patch("src.ingestion.downloader.os.path.getmtime", return_value=1735689600.0)
     @patch("src.ingestion.downloader.console.print")
     @patch("src.ingestion.downloader.get_session")
@@ -148,7 +214,14 @@ class TestDownloadData(unittest.TestCase):
         read_data="Category,Name,Link,Filetype\nTestCat,SkippedDoc,http://example.com,pdf",
     )
     def test_download_files_skipping(
-        self, mock_file, mock_exists, mock_get_session, mock_print, mock_getmtime, mock_load_meta, mock_save_meta
+        self,
+        mock_file,
+        mock_exists,
+        mock_get_session,
+        mock_print,
+        mock_getmtime,
+        mock_load_meta,
+        mock_save_meta,
     ):
         # Setup: File exists
         mock_exists.return_value = True
@@ -201,9 +274,7 @@ class TestExtractAuthor(unittest.TestCase):
 
 class TestMetadataPersistence(unittest.TestCase):
     def test_save_and_load_metadata(self):
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as tmp:
             tmp_path = tmp.name
 
         try:
@@ -254,9 +325,7 @@ class TestMetadataPersistence(unittest.TestCase):
         self.assertEqual(result, {})
 
     def test_save_sorts_by_doc_id(self):
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as tmp:
             tmp_path = tmp.name
 
         try:

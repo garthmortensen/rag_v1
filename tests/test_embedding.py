@@ -17,6 +17,7 @@ from src.embedding import model
 
 # ── Helpers ─────────────────────────────────────────────────────────
 
+
 def _make_chunk(page_content: str, source: str, **extra_meta):
     """Create a minimal LangChain-style Document mock."""
     doc = MagicMock()
@@ -50,6 +51,7 @@ SAMPLE_CSV_ROWS = [
 
 
 # ── Test Cases ──────────────────────────────────────────────────────
+
 
 class TestLoadDocIdMap(unittest.TestCase):
     """Tests for load_doc_id_map()."""
@@ -103,7 +105,10 @@ class TestGetEmbeddingFunction(unittest.TestCase):
         mock_hfe.assert_called_once_with(model_name="test-model")
 
     @patch("src.embedding.model.HuggingFaceEmbeddings")
-    @patch("src.embedding.model.select_best_model", return_value={"name": "all-MiniLM-L6-v2"})
+    @patch(
+        "src.embedding.model.select_best_model",
+        return_value={"name": "all-MiniLM-L6-v2"},
+    )
     def test_default_model_auto_selects(self, mock_select, mock_hfe):
         model.get_embedding_function()
         mock_select.assert_called_once()
@@ -202,8 +207,24 @@ class TestEmbedAndStore(unittest.TestCase):
         mock_get_emb.return_value = mock_embedding_fn
 
         mock_load_map.return_value = {
-            "corpus/raw_data/a.pdf": {"doc_id": "AAA", "title": "", "category": "", "source_org": "", "author": "", "source_url": "", "source_type": "pdf"},
-            "corpus/raw_data/b.html": {"doc_id": "BBB", "title": "", "category": "", "source_org": "", "author": "", "source_url": "", "source_type": "html"},
+            "corpus/raw_data/a.pdf": {
+                "doc_id": "AAA",
+                "title": "",
+                "category": "",
+                "source_org": "",
+                "author": "",
+                "source_url": "",
+                "source_type": "pdf",
+            },
+            "corpus/raw_data/b.html": {
+                "doc_id": "BBB",
+                "title": "",
+                "category": "",
+                "source_org": "",
+                "author": "",
+                "source_url": "",
+                "source_type": "html",
+            },
         }
 
         chunks = [
@@ -283,9 +304,7 @@ class TestEmbedAndStore(unittest.TestCase):
     @patch("src.embedding.model.get_or_create_collection")
     @patch("src.embedding.model.get_embedding_function")
     @patch("src.embedding.model.load_doc_id_map")
-    def test_batching_splits_upserts(
-        self, mock_load_map, mock_get_emb, mock_get_col
-    ):
+    def test_batching_splits_upserts(self, mock_load_map, mock_get_emb, mock_get_col):
         """With batch_size=2 and 5 chunks, upsert is called 3 times (2+2+1)."""
         mock_collection, mock_embedding_fn = self._setup_mocks()
         mock_embedding_fn.embed_documents.return_value = [[0.0] * 384] * 5
@@ -309,9 +328,7 @@ class TestEmbedAndStore(unittest.TestCase):
     @patch("src.embedding.model.get_or_create_collection")
     @patch("src.embedding.model.get_embedding_function")
     @patch("src.embedding.model.load_doc_id_map")
-    def test_empty_chunks_returns_zero(
-        self, mock_load_map, mock_get_emb, mock_get_col
-    ):
+    def test_empty_chunks_returns_zero(self, mock_load_map, mock_get_emb, mock_get_col):
         """embed_and_store([]) returns 0 and doesn't touch ChromaDB."""
         result = model.embed_and_store([])
         self.assertEqual(result, 0)
@@ -320,9 +337,7 @@ class TestEmbedAndStore(unittest.TestCase):
     @patch("src.embedding.model.get_or_create_collection")
     @patch("src.embedding.model.get_embedding_function")
     @patch("src.embedding.model.load_doc_id_map")
-    def test_returns_total_chunk_count(
-        self, mock_load_map, mock_get_emb, mock_get_col
-    ):
+    def test_returns_total_chunk_count(self, mock_load_map, mock_get_emb, mock_get_col):
         """embed_and_store returns the total number of chunks upserted."""
         mock_collection, mock_embedding_fn = self._setup_mocks()
         mock_embedding_fn.embed_documents.return_value = [[0.0] * 384] * 3

@@ -85,7 +85,9 @@ class TestSubsectionHeadingRegex(unittest.TestCase):
         self.assertEqual(m.group(2), "Model Overview")
 
     def test_matches_roman_iii(self):
-        m = _SUBSECTION_HEADING_RE.search("iii. Key Assumptions for the Credit Card Model")
+        m = _SUBSECTION_HEADING_RE.search(
+            "iii. Key Assumptions for the Credit Card Model"
+        )
         self.assertIsNotNone(m)
         self.assertEqual(m.group(2), "Key Assumptions for the Credit Card Model")
 
@@ -100,16 +102,12 @@ class TestSubsectionHeadingRegex(unittest.TestCase):
         self.assertEqual(m.group(2), "Question")
 
     def test_strips_toc_dotted_leader(self):
-        m = _SUBSECTION_HEADING_RE.search(
-            "i. Statement of Purpose .......... 7"
-        )
+        m = _SUBSECTION_HEADING_RE.search("i. Statement of Purpose .......... 7")
         self.assertIsNotNone(m)
         self.assertEqual(m.group(2), "Statement of Purpose")
 
     def test_no_match_on_plain_sentence(self):
-        m = _SUBSECTION_HEADING_RE.search(
-            "The model is described in detail below."
-        )
+        m = _SUBSECTION_HEADING_RE.search("The model is described in detail below.")
         self.assertIsNone(m)
 
 
@@ -139,27 +137,29 @@ class TestHasSectionHeaders(unittest.TestCase):
 
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_returns_true_when_headers_present(self, mock_reader_cls):
-        mock_reader_cls.return_value = _make_reader([
-            "Title page",
-            "Table of Contents",
-            "7 Model Documentation: Corporate Model\nBody",
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "Title page",
+                "Table of Contents",
+                "7 Model Documentation: Corporate Model\nBody",
+            ]
+        )
         self.assertTrue(has_section_headers("fake.pdf"))
 
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_returns_false_when_no_headers(self, mock_reader_cls):
-        mock_reader_cls.return_value = _make_reader([
-            "Title page",
-            "Some general content without structure",
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "Title page",
+                "Some general content without structure",
+            ]
+        )
         self.assertFalse(has_section_headers("fake.pdf"))
 
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_only_checks_sample_pages(self, mock_reader_cls):
         """If the header is on page 15 and sample_pages=10, should miss it."""
-        pages = ["No header"] * 14 + [
-            "15 Model Documentation: Late Section\nBody"
-        ]
+        pages = ["No header"] * 14 + ["15 Model Documentation: Late Section\nBody"]
         mock_reader_cls.return_value = _make_reader(pages)
         self.assertFalse(has_section_headers("fake.pdf", sample_pages=10))
         self.assertTrue(has_section_headers("fake.pdf", sample_pages=15))
@@ -174,11 +174,13 @@ class TestLoadPdfBySection(unittest.TestCase):
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_simple_two_section_pdf(self, mock_reader_cls):
         """Two sections, each with one subsection."""
-        mock_reader_cls.return_value = _make_reader([
-            "Title page content",                                          # p1 preamble
-            "2 Model Documentation: Section A\ni. Overview\nBody of A",    # p2
-            "3 Model Documentation: Section B\ni. Purpose\nBody of B",     # p3
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "Title page content",  # p1 preamble
+                "2 Model Documentation: Section A\ni. Overview\nBody of A",  # p2
+                "3 Model Documentation: Section B\ni. Purpose\nBody of B",  # p3
+            ]
+        )
         docs = load_pdf_by_section("test.pdf")
 
         # Should produce: preamble, Section A/Overview, Section B/Purpose
@@ -202,12 +204,14 @@ class TestLoadPdfBySection(unittest.TestCase):
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_multiple_subsections(self, mock_reader_cls):
         """One section with two subsections across multiple pages."""
-        mock_reader_cls.return_value = _make_reader([
-            "1 Model Documentation: Corp Model\ni. Statement of Purpose\nPurpose body",   # p1
-            "2 Model Documentation: Corp Model\nMore purpose text",                         # p2
-            "3 Model Documentation: Corp Model\nii. Model Overview\nOverview body",         # p3
-            "4 Model Documentation: Corp Model\nMore overview",                              # p4
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "1 Model Documentation: Corp Model\ni. Statement of Purpose\nPurpose body",  # p1
+                "2 Model Documentation: Corp Model\nMore purpose text",  # p2
+                "3 Model Documentation: Corp Model\nii. Model Overview\nOverview body",  # p3
+                "4 Model Documentation: Corp Model\nMore overview",  # p4
+            ]
+        )
         docs = load_pdf_by_section("test.pdf")
 
         # Should produce 2 docs: Statement of Purpose (pp 1-2), Model Overview (pp 3-4)
@@ -224,11 +228,13 @@ class TestLoadPdfBySection(unittest.TestCase):
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_section_transition(self, mock_reader_cls):
         """Section boundary detected from page header change."""
-        mock_reader_cls.return_value = _make_reader([
-            "1 Model Documentation: Alpha\ni. Intro\nAlpha content",       # p1
-            "2 Model Documentation: Alpha\nMore alpha",                     # p2
-            "3 Model Documentation: Beta\ni. Intro\nBeta content",         # p3
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "1 Model Documentation: Alpha\ni. Intro\nAlpha content",  # p1
+                "2 Model Documentation: Alpha\nMore alpha",  # p2
+                "3 Model Documentation: Beta\ni. Intro\nBeta content",  # p3
+            ]
+        )
         docs = load_pdf_by_section("test.pdf")
 
         # Alpha/Intro (pp 1-2), Beta/Intro (p3)
@@ -241,11 +247,13 @@ class TestLoadPdfBySection(unittest.TestCase):
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_preamble_pages_not_split_by_toc_headings(self, mock_reader_cls):
         """TOC entries on preamble pages should NOT create subsection splits."""
-        mock_reader_cls.return_value = _make_reader([
-            "Title page",
-            "Table of Contents\ni. Statement of Purpose ... 7\nii. Model Overview ... 10",
-            "3 Model Documentation: Section A\ni. Statement of Purpose\nBody",
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "Title page",
+                "Table of Contents\ni. Statement of Purpose ... 7\nii. Model Overview ... 10",
+                "3 Model Documentation: Section A\ni. Statement of Purpose\nBody",
+            ]
+        )
         docs = load_pdf_by_section("test.pdf")
 
         # Preamble should be one doc (pages 1-2), Section A one doc
@@ -257,9 +265,11 @@ class TestLoadPdfBySection(unittest.TestCase):
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_page_headers_stripped_from_content(self, mock_reader_cls):
         """The 'Model Documentation: ...' header line should not appear in page_content."""
-        mock_reader_cls.return_value = _make_reader([
-            "1 Model Documentation: Test\ni. Intro\nActual body text",
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "1 Model Documentation: Test\ni. Intro\nActual body text",
+            ]
+        )
         docs = load_pdf_by_section("test.pdf")
         self.assertEqual(len(docs), 1)
         self.assertNotIn("Model Documentation", docs[0].page_content)
@@ -268,11 +278,13 @@ class TestLoadPdfBySection(unittest.TestCase):
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_empty_pages_skipped(self, mock_reader_cls):
         """Pages with no text should not produce empty documents."""
-        mock_reader_cls.return_value = _make_reader([
-            "1 Model Documentation: Test\ni. Intro\nBody",
-            "",  # empty page
-            "3 Model Documentation: Test\nMore body",
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "1 Model Documentation: Test\ni. Intro\nBody",
+                "",  # empty page
+                "3 Model Documentation: Test\nMore body",
+            ]
+        )
         docs = load_pdf_by_section("test.pdf")
         for doc in docs:
             self.assertTrue(len(doc.page_content.strip()) > 0)
@@ -280,9 +292,11 @@ class TestLoadPdfBySection(unittest.TestCase):
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_metadata_contains_all_required_fields(self, mock_reader_cls):
         """Every Document must have source, section, subsection, start_page, end_page."""
-        mock_reader_cls.return_value = _make_reader([
-            "1 Model Documentation: MySection\ni. MySubsection\nBody text",
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "1 Model Documentation: MySection\ni. MySubsection\nBody text",
+            ]
+        )
         docs = load_pdf_by_section("test.pdf")
         self.assertEqual(len(docs), 1)
         meta = docs[0].metadata
@@ -300,10 +314,12 @@ class TestLoadPdfBySection(unittest.TestCase):
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
     def test_intro_subsection_for_pages_before_first_heading(self, mock_reader_cls):
         """Pages in a section before any subsection heading get '(intro)' label."""
-        mock_reader_cls.return_value = _make_reader([
-            "1 Model Documentation: Revisions\nSome revision notes",
-            "2 Model Documentation: Revisions\nMore revision notes",
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "1 Model Documentation: Revisions\nSome revision notes",
+                "2 Model Documentation: Revisions\nMore revision notes",
+            ]
+        )
         docs = load_pdf_by_section("test.pdf")
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0].metadata["section"], "Revisions")
@@ -314,9 +330,11 @@ class TestLoadPdfBySection(unittest.TestCase):
         """Verify return type is list of LangChain Document objects."""
         from langchain_core.documents import Document
 
-        mock_reader_cls.return_value = _make_reader([
-            "1 Model Documentation: Test\ni. Intro\nBody",
-        ])
+        mock_reader_cls.return_value = _make_reader(
+            [
+                "1 Model Documentation: Test\ni. Intro\nBody",
+            ]
+        )
         docs = load_pdf_by_section("test.pdf")
         for doc in docs:
             self.assertIsInstance(doc, Document)
@@ -393,15 +411,16 @@ class TestScanPdfSections(unittest.TestCase):
             "i. Statement of Purpose\nSome text here.",
             "2 Model Documentation: Corporate Model\n"
             "ii. Model Overview\nMore text here.",
-            "3 Model Documentation: CRE Model\n"
-            "i. Statement of Purpose\nCRE intro.",
+            "3 Model Documentation: CRE Model\ni. Statement of Purpose\nCRE intro.",
         ]
         mock_reader_cls.return_value = _make_reader(pages)
         result = scan_pdf_sections("dummy.pdf")
 
         self.assertIn("Corporate Model", result)
         self.assertIn("CRE Model", result)
-        self.assertEqual(result["Corporate Model"], ["Model Overview", "Statement of Purpose"])
+        self.assertEqual(
+            result["Corporate Model"], ["Model Overview", "Statement of Purpose"]
+        )
         self.assertEqual(result["CRE Model"], ["Statement of Purpose"])
 
     @patch("src.ingestion.pdf_section_splitter.PdfReader")
@@ -409,8 +428,7 @@ class TestScanPdfSections(unittest.TestCase):
         """Preamble pages (before first header) should be excluded."""
         pages = [
             "Title Page\nTable of Contents",  # no header → preamble
-            "2 Model Documentation: Operational Risk Model\n"
-            "i. Model Overview\nText.",
+            "2 Model Documentation: Operational Risk Model\ni. Model Overview\nText.",
         ]
         mock_reader_cls.return_value = _make_reader(pages)
         result = scan_pdf_sections("dummy.pdf")

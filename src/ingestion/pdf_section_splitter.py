@@ -230,9 +230,13 @@ def load_pdf_by_section(filepath: str) -> list[Document]:
         else:
             # Flush the previous block
             _flush_block(
-                documents, block_texts,
-                filepath, block_section, block_subsection,
-                block_start, i - 1,
+                documents,
+                block_texts,
+                filepath,
+                block_section,
+                block_subsection,
+                block_start,
+                i - 1,
             )
             # Start a new block
             block_section = sec
@@ -242,9 +246,13 @@ def load_pdf_by_section(filepath: str) -> list[Document]:
 
     # Flush the last block
     _flush_block(
-        documents, block_texts,
-        filepath, block_section, block_subsection,
-        block_start, n_pages - 1,
+        documents,
+        block_texts,
+        filepath,
+        block_section,
+        block_subsection,
+        block_start,
+        n_pages - 1,
     )
 
     logger.info(
@@ -294,8 +302,8 @@ def _flush_block(
                 "source": source,
                 "section": section,
                 "subsection": subsection,
-                "start_page": start_idx + 1,   # 1-based
-                "end_page": end_idx + 1,        # 1-based
+                "start_page": start_idx + 1,  # 1-based
+                "end_page": end_idx + 1,  # 1-based
             },
         )
     )

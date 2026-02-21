@@ -25,7 +25,7 @@ st.set_page_config(
     layout="wide",
 )
 
-from src.config import CFG, config_as_text
+from src.config import config_as_text
 from src.embedding.model import VECTOR_DB_DIR, COLLECTION_NAME
 from src.generation.llm import (
     stream_answer,
@@ -56,13 +56,9 @@ with st.sidebar:
     client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
     collections = [c.name for c in client.list_collections()]
     default_idx = (
-        collections.index(COLLECTION_NAME)
-        if COLLECTION_NAME in collections
-        else 0
+        collections.index(COLLECTION_NAME) if COLLECTION_NAME in collections else 0
     )
-    selected_collection = st.selectbox(
-        "Collection", collections, index=default_idx
-    )
+    selected_collection = st.selectbox("Collection", collections, index=default_idx)
 
     # Show collection stats
     col = client.get_collection(selected_collection)
@@ -136,7 +132,9 @@ with st.sidebar:
     # _corpus_sections built below the sidebar; populate lazily via session cache
     # We reference _corpus_sections which is computed right after the sidebar block.
     # Use a placeholder dict that gets filled in after st.sidebar context exits.
-    _pdf_section_selections: dict[str, dict[str, list[str]]] = {}  # pdf → {sec → [subs]}
+    _pdf_section_selections: dict[
+        str, dict[str, list[str]]
+    ] = {}  # pdf → {sec → [subs]}
 
     _RAW_DIR_SIDEBAR = os.path.join(os.path.dirname(__file__), "corpus", "raw_data")
 
@@ -147,10 +145,7 @@ with st.sidebar:
             if has_section_headers(pdf):
                 sections = scan_pdf_sections(pdf)
                 short = (
-                    os.path.basename(pdf)
-                    .replace(".pdf", "")
-                    .replace("_", " ")
-                    .title()
+                    os.path.basename(pdf).replace(".pdf", "").replace("_", " ").title()
                 )
                 results[short] = sections
         return results
@@ -166,9 +161,7 @@ with st.sidebar:
             options=["(all PDFs)"] + _all_pdfs,
             key="pdf_section_picker",
         )
-        _pdfs_to_show = (
-            _all_pdfs if _selected_pdf == "(all PDFs)" else [_selected_pdf]
-        )
+        _pdfs_to_show = _all_pdfs if _selected_pdf == "(all PDFs)" else [_selected_pdf]
 
         for _pdf_name in _pdfs_to_show:
             _sec_map = _sidebar_corpus_sections[_pdf_name]
@@ -194,9 +187,7 @@ with st.sidebar:
                     selected_sections[sec] = list(subs)
 
         if selected_sections:
-            _sel_sub_count = sum(
-                len(v) if v else 1 for v in selected_sections.values()
-            )
+            _sel_sub_count = sum(len(v) if v else 1 for v in selected_sections.values())
             st.caption(
                 f"Filtering to {len(selected_sections)} section(s), "
                 f"{_sel_sub_count} subsection(s)."
@@ -214,9 +205,7 @@ with st.sidebar:
         if DEFAULT_PROVIDER in provider_list
         else 0
     )
-    provider = st.selectbox(
-        "LLM Provider", provider_list, index=default_provider_idx
-    )
+    provider = st.selectbox("LLM Provider", provider_list, index=default_provider_idx)
 
     # Model selector: curated list + "Other" escape hatch
     model_options = PROVIDER_MODELS.get(provider, [])
@@ -228,13 +217,9 @@ with st.sidebar:
     # Build display list: curated models + "Other…"
     display_options = list(model_options) + ["Other…"]
     default_idx = (
-        model_options.index(default_model)
-        if default_model in model_options
-        else 0
+        model_options.index(default_model) if default_model in model_options else 0
     )
-    model_choice = st.selectbox(
-        "Model", display_options, index=default_idx
-    )
+    model_choice = st.selectbox("Model", display_options, index=default_idx)
     if model_choice == "Other…":
         model = st.text_input("Custom model name", value="")
     else:
@@ -260,6 +245,7 @@ st.caption(
 
 # ── Section overview banner ─────────────────────────────────────────
 
+
 @st.cache_data(show_spinner=False)
 def _scan_corpus_sections(raw_dir: str) -> dict[str, dict[str, list[str]]]:
     """Scan all PDFs in *raw_dir* and return section metadata.
@@ -273,12 +259,7 @@ def _scan_corpus_sections(raw_dir: str) -> dict[str, dict[str, list[str]]]:
         if has_section_headers(pdf):
             sections = scan_pdf_sections(pdf)
             # Build a readable short name from the filename
-            short = (
-                os.path.basename(pdf)
-                .replace(".pdf", "")
-                .replace("_", " ")
-                .title()
-            )
+            short = os.path.basename(pdf).replace(".pdf", "").replace("_", " ").title()
             results[short] = sections
     return results
 
@@ -313,6 +294,7 @@ if "messages" not in st.session_state:
 
 # ── Copy helper ─────────────────────────────────────────────────────
 
+
 def _copy_button(question: str, answer: str, key: str) -> None:
     """Render a single-click copy-to-clipboard button for a Q&A pair."""
     import html as _html
@@ -333,6 +315,7 @@ def _copy_button(question: str, answer: str, key: str) -> None:
 
 
 # ── Chunk renderer ──────────────────────────────────────────────────
+
 
 def _render_chunk(chunk: dict) -> None:
     """Render a single retrieved chunk inside an expander."""
@@ -420,9 +403,7 @@ if query:
         else:
             conditions.append({"section": {"$in": all_selected_secs}})
 
-        all_selected_subs = [
-            sub for subs in selected_sections.values() for sub in subs
-        ]
+        all_selected_subs = [sub for subs in selected_sections.values() for sub in subs]
         if all_selected_subs:
             if len(all_selected_subs) == 1:
                 conditions.append({"subsection": all_selected_subs[0]})
@@ -445,7 +426,8 @@ if query:
             collection_name=selected_collection,
         )
         retrieval_status.update(
-            label=f"✅ Retrieved {len(chunks)} chunks", state="complete",
+            label=f"✅ Retrieved {len(chunks)} chunks",
+            state="complete",
         )
 
     if not chunks:
@@ -454,17 +436,19 @@ if query:
         st.stop()
 
     # Show retrieved sources immediately
-    with st.expander(
-        f"📚 Retrieved Sources ({len(chunks)} chunks)", expanded=True
-    ):
+    with st.expander(f"📚 Retrieved Sources ({len(chunks)} chunks)", expanded=True):
         for chunk in chunks:
             _render_chunk(chunk)
 
     # Generate LLM answer (streaming, token-by-token)
     with st.chat_message("assistant"):
-        with st.status(f"🤖 Generating answer with {provider}/{model}…", expanded=False) as gen_status:
+        with st.status(
+            f"🤖 Generating answer with {provider}/{model}…", expanded=False
+        ) as gen_status:
             start = time.time()
-            gen_status.update(label=f"🤖 Generating answer with {provider}/{model}…", state="running")
+            gen_status.update(
+                label=f"🤖 Generating answer with {provider}/{model}…", state="running"
+            )
         try:
             answer = st.write_stream(
                 stream_answer(

@@ -1,13 +1,17 @@
 import csv
 import os
+import mimetypes
 import time
 import requests
 import random
 import re
+import shutil
+import subprocess
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
 from urllib3.util.retry import Retry
 
 import base32_crockford
@@ -84,10 +88,19 @@ def ensure_directory(path):
 
 
 def get_headers():
+    # Browser-like headers improve success rates on sites that block
+    # default Python clients or drop connections without responding.
     return {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "close",
+        "Upgrade-Insecure-Requests": "1",
     }
 
 
@@ -110,7 +123,9 @@ def get_session():
 def generate_doc_id():
     """Generate a unique Crockford Base32 doc_id from timestamp + counter."""
     global _doc_id_counter
-    ts = int(datetime.now(timezone.utc).timestamp() * 1000)  # eg 1685625600000 for 2023-06-01T00:00:00Z
+    ts = int(
+        datetime.now(timezone.utc).timestamp() * 1000
+    )  # eg 1685625600000 for 2023-06-01T00:00:00Z
     unique_int = ts * 1000 + _doc_id_counter  # eg 1685625600000000 + counter
     _doc_id_counter += 1
     return base32_crockford.encode(unique_int)  # eg "3W5E11264SGS" for 1685625600000000
@@ -141,7 +156,9 @@ def save_metadata(metadata, path):
         writer.writerows(rows)
 
 
-def capture_metadata(response, filepath, filetype, url, name, category="", source_org=""):
+def capture_metadata(
+    response, filepath, filetype, url, name, category="", source_org=""
+):
     """Build a metadata dict from a successful download response."""
     last_modified_raw = response.headers.get("Last-Modified", "")
     if last_modified_raw:
@@ -164,6 +181,147 @@ def capture_metadata(response, filepath, filetype, url, name, category="", sourc
         "content_type": response.headers.get("Content-Type", ""),
         "content_length_bytes": response.headers.get("Content-Length", ""),
     }
+
+
+def capture_metadata_from_file(
+    filepath: str,
+    filetype: str,
+    url: str,
+    name: str,
+    category: str = "",
+    source_org: str = "",
+) -> dict:
+    """Build a metadata dict for a successful download without an HTTP response.
+
+    Used for wget/curl fallback downloads.
+    """
+    guessed_type, _ = mimetypes.guess_type(filepath)
+    content_type = guessed_type or (
+        "application/pdf" if filetype.lower() == "pdf" else ""
+    )
+    try:
+        size = str(os.path.getsize(filepath))
+    except OSError:
+        size = ""
+
+    return {
+        "doc_id": generate_doc_id(),
+        "source_type": filetype,
+        "source_url": url,
+        "local_path": filepath,
+        "title": name,
+        "category": category,
+        "source_org": source_org,
+        "author": extract_author(url),
+        "retrieved_at": datetime.now(timezone.utc).strftime("%Y%m%d%H%M"),
+        "last_modified_at": "",
+        "content_type": content_type,
+        "content_length_bytes": size,
+    }
+
+
+def _write_response_to_file(response: requests.Response, filepath: str) -> None:
+    """Stream response content to *filepath* safely."""
+    tmp = f"{filepath}.part"
+    with open(tmp, "wb") as out_file:
+        for chunk in response.iter_content(chunk_size=1024 * 256):
+            if chunk:
+                out_file.write(chunk)
+    os.replace(tmp, filepath)
+
+
+def _download_with_wget(url: str, filepath: str, user_agent: str, timeout_s: int) -> bool:
+    """Fallback downloader using wget if available."""
+    wget = shutil.which("wget")
+    if not wget:
+        return False
+
+    tmp = f"{filepath}.part"
+    cmd = [
+        wget,
+        "--quiet",
+        "--no-verbose",
+        "--max-redirect=10",
+        "--timeout",
+        str(timeout_s),
+        "--tries",
+        "3",
+        "--user-agent",
+        user_agent,
+        "--output-document",
+        tmp,
+        url,
+    ]
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        os.replace(tmp, filepath)
+        return True
+    except Exception:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except OSError:
+            pass
+        return False
+
+
+def _download_with_curl(url: str, filepath: str, user_agent: str, timeout_s: int) -> bool:
+    """Fallback downloader using curl if available."""
+    curl = shutil.which("curl")
+    if not curl:
+        return False
+
+    tmp = f"{filepath}.part"
+    cmd = [
+        curl,
+        "--fail",
+        "--location",
+        "--silent",
+        "--show-error",
+        "--max-time",
+        str(timeout_s),
+        "--retry",
+        "3",
+        "--retry-delay",
+        "1",
+        "-A",
+        user_agent,
+        "-o",
+        tmp,
+        url,
+    ]
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        os.replace(tmp, filepath)
+        return True
+    except Exception:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except OSError:
+            pass
+        return False
+
+
+def _download_with_fallback(session: requests.Session, url: str, filepath: str, timeout_s: int = 60):
+    """Try requests first; on failure, fall back to wget/curl.
+
+    Returns a tuple: (used_response, used_fallback)
+    - used_response: requests.Response | None
+    - used_fallback: bool
+    """
+    try:
+        response = session.get(url, timeout=timeout_s, stream=True)
+        response.raise_for_status()
+        _write_response_to_file(response, filepath)
+        return response, False
+    except RequestException:
+        ua = session.headers.get("User-Agent", get_headers().get("User-Agent", ""))
+        if _download_with_wget(url, filepath, ua, timeout_s):
+            return None, True
+        if _download_with_curl(url, filepath, ua, timeout_s):
+            return None, True
+        raise
 
 
 def construct_filepath(base_dir, category, name, filetype):
@@ -272,15 +430,19 @@ def download_files():
             else:
                 try:
                     console.print(f"  Downloading: {name}...")
-                    response = session.get(url, timeout=30)
-                    response.raise_for_status()
-                    with open(filepath, "wb") as out_file:
-                        out_file.write(response.content)
+                    response, used_fallback = _download_with_fallback(
+                        session, url, filepath, timeout_s=60
+                    )
                     result_status = "[green]Downloaded[/green]"
 
-                    metadata[filepath] = capture_metadata(
-                        response, filepath, filetype, url, name, category, source_org
-                    )
+                    if used_fallback or response is None:
+                        metadata[filepath] = capture_metadata_from_file(
+                            filepath, filetype, url, name, category, source_org
+                        )
+                    else:
+                        metadata[filepath] = capture_metadata(
+                            response, filepath, filetype, url, name, category, source_org
+                        )
 
                     # Only sleep if we actually downloaded something
                     polite_sleep(MIN_DELAY, MAX_DELAY)
@@ -316,9 +478,7 @@ def download_citations():
     pipeline can pick them up.
     """
     if not os.path.exists(CITATIONS_CSV):
-        console.print(
-            f"[dim]No citations file at {CITATIONS_CSV} — skipping.[/dim]"
-        )
+        console.print(f"[dim]No citations file at {CITATIONS_CSV} — skipping.[/dim]")
         return
 
     ensure_directory(CITATIONS_DIR)
@@ -331,10 +491,7 @@ def download_citations():
     try:
         with open(CITATIONS_CSV, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
-            rows = [
-                r for r in reader
-                if r.get("download_url", "").strip()
-            ]
+            rows = [r for r in reader if r.get("download_url", "").strip()]
     except FileNotFoundError:
         return
 
@@ -376,9 +533,7 @@ def download_citations():
 
             # Build a short name for the file
             short_name = f"{sanitize_filename(authors.split(',')[0])}_{year}"
-            filepath = os.path.join(
-                CITATIONS_DIR, f"{short_name}.{filetype}"
-            )
+            filepath = os.path.join(CITATIONS_DIR, f"{short_name}.{filetype}")
 
             display_name = f"{authors} ({year})"
             progress.update(
@@ -392,21 +547,30 @@ def download_citations():
             else:
                 try:
                     console.print(f"  Downloading: {display_name}...")
-                    response = session.get(download_url, timeout=60)
-                    response.raise_for_status()
-                    with open(filepath, "wb") as out_file:
-                        out_file.write(response.content)
+                    response, used_fallback = _download_with_fallback(
+                        session, download_url, filepath, timeout_s=90
+                    )
                     result_status = "[green]Downloaded[/green]"
 
-                    metadata[filepath] = capture_metadata(
-                        response,
-                        filepath,
-                        filetype,
-                        resolved_url or download_url,
-                        title,
-                        f"Citation — {category}",
-                        "Academic",
-                    )
+                    if used_fallback or response is None:
+                        metadata[filepath] = capture_metadata_from_file(
+                            filepath,
+                            filetype,
+                            resolved_url or download_url,
+                            title,
+                            f"Citation — {category}",
+                            "Academic",
+                        )
+                    else:
+                        metadata[filepath] = capture_metadata(
+                            response,
+                            filepath,
+                            filetype,
+                            resolved_url or download_url,
+                            title,
+                            f"Citation — {category}",
+                            "Academic",
+                        )
 
                     polite_sleep(MIN_DELAY, MAX_DELAY)
 

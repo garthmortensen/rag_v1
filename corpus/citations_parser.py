@@ -61,17 +61,17 @@ CITATION_PATTERNS = [
     # Quoted title with parenthetical year
     re.compile(
         r"(?P<authors>"
-        r"[A-Z][a-zà-ÿA-Z\-']+"          # first author surname
-        r"(?:[,;]?\s+(?:and\s+)?"          # separator
-        r"[A-Z][\.\w]*\.?"                 # initials or first name
-        r"(?:\s+[A-Z][a-zà-ÿA-Z\-']+)?"   # optional additional surname
-        r")*"                              # repeat for co-authors
+        r"[A-Z][a-zà-ÿA-Z\-']+"  # first author surname
+        r"(?:[,;]?\s+(?:and\s+)?"  # separator
+        r"[A-Z][\.\w]*\.?"  # initials or first name
+        r"(?:\s+[A-Z][a-zà-ÿA-Z\-']+)?"  # optional additional surname
+        r")*"  # repeat for co-authors
         r")"
-        r"\s*\((?P<year>\d{4}[a-z]?)\)"    # (2025) or (2025a)
+        r"\s*\((?P<year>\d{4}[a-z]?)\)"  # (2025) or (2025a)
         r"[\.,;]?\s*"
         r'["\u201c](?P<title>[^"\u201d]+)["\u201d]'  # "Title"
         r"[,.\s]*"
-        r"(?P<venue>[^.]*(?:\.\s|$))?"      # Venue.
+        r"(?P<venue>[^.]*(?:\.\s|$))?"  # Venue.
     ),
     # Non-quoted title (books, reports)
     re.compile(
@@ -97,25 +97,15 @@ IDENTIFIER_PATTERNS = {
         r"National\s+Bureau\s+of\s+Economic\s+Research)"
         r"[,\s]*(?:[Nn]o\.?\s*)?(\d{3,6})",
     ),
-    "NBER_w": re.compile(
-        r"nber\.org/papers/w(\d+)"
-    ),
-    "DOI": re.compile(
-        r"(?:doi(?:\.org)?[:/]\s*)(10\.\d{4,}/[^\s,;]+)"
-    ),
-    "arXiv": re.compile(
-        r"arXiv[:\s]*(\d{4}\.\d{4,5})"
-    ),
-    "SSRN": re.compile(
-        r"(?:SSRN|ssrn\.com/abstract=)(\d+)"
-    ),
+    "NBER_w": re.compile(r"nber\.org/papers/w(\d+)"),
+    "DOI": re.compile(r"(?:doi(?:\.org)?[:/]\s*)(10\.\d{4,}/[^\s,;]+)"),
+    "arXiv": re.compile(r"arXiv[:\s]*(\d{4}\.\d{4,5})"),
+    "SSRN": re.compile(r"(?:SSRN|ssrn\.com/abstract=)(\d+)"),
     "FEDS": re.compile(
         r"(?:FEDS|Finance\s+and\s+Economics\s+Discussion\s+Series)"
         r"[,\s]*(?:[Nn]o\.?\s*)?(\d{4}[-–]\d{2,4})"
     ),
-    "Staff_Report": re.compile(
-        r"(?:Staff\s+Report|SR)[,\s]*(?:[Nn]o\.?\s*)?(\d{2,4})"
-    ),
+    "Staff_Report": re.compile(r"(?:Staff\s+Report|SR)[,\s]*(?:[Nn]o\.?\s*)?(\d{2,4})"),
     "Federal_Reserve": re.compile(
         r"(?:Federal\s+Reserve\s+(?:Board|Bank|Bulletin|System))"
     ),
@@ -149,12 +139,10 @@ def _resolve_download_url(category: str, identifier: str) -> str:
     """Return a direct-download PDF/file URL for known source types."""
     resolvers = {
         "NBER": lambda id_: (
-            f"https://www.nber.org/system/files/working_papers/"
-            f"w{id_}/w{id_}.pdf"
+            f"https://www.nber.org/system/files/working_papers/w{id_}/w{id_}.pdf"
         ),
         "NBER_w": lambda id_: (
-            f"https://www.nber.org/system/files/working_papers/"
-            f"w{id_}/w{id_}.pdf"
+            f"https://www.nber.org/system/files/working_papers/w{id_}/w{id_}.pdf"
         ),
         "arXiv": lambda id_: f"https://arxiv.org/pdf/{id_}",
         "FEDS": lambda id_: (
@@ -283,9 +271,7 @@ def parse_citations(text: str, source_pdf: str = "") -> list[Citation]:
                     id_match = id_pat.search(surrounding)
                     if id_match:
                         category = cat
-                        identifier = (
-                            id_match.group(1) if id_match.lastindex else ""
-                        )
+                        identifier = id_match.group(1) if id_match.lastindex else ""
                         break
 
             url = _resolve_url(category, identifier)
@@ -436,19 +422,16 @@ def display_summary(citations: list[Citation]) -> None:
     summary_table.add_column("Direct PDF", justify="right", style="blue")
 
     for cat in sorted(categories):
-        with_url = sum(
-            1 for c in citations if c.category == cat and c.resolved_url
-        )
-        with_pdf = sum(
-            1 for c in citations if c.category == cat and c.download_url
-        )
-        summary_table.add_row(
-            cat, str(categories[cat]), str(with_url), str(with_pdf)
-        )
+        with_url = sum(1 for c in citations if c.category == cat and c.resolved_url)
+        with_pdf = sum(1 for c in citations if c.category == cat and c.download_url)
+        summary_table.add_row(cat, str(categories[cat]), str(with_url), str(with_pdf))
 
     summary_table.add_section()
     summary_table.add_row(
-        "TOTAL", str(len(citations)), str(downloadable), str(with_direct),
+        "TOTAL",
+        str(len(citations)),
+        str(downloadable),
+        str(with_direct),
         style="bold",
     )
     console.print(summary_table)

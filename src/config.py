@@ -70,9 +70,7 @@ def load_config(path: str = CONFIG_PATH) -> dict[str, str | int | bool]:
 
     resolved = os.path.normpath(path)
     if not os.path.isfile(resolved):
-        logger.warning(
-            f"Config file not found at {resolved} — using defaults"
-        )
+        logger.warning(f"Config file not found at {resolved} — using defaults")
         return cfg
 
     with open(resolved, encoding="utf-8") as fh:

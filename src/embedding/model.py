@@ -53,6 +53,7 @@ III N   N  JJ   EEEEE SSSS    T   III  OOO  N   N
 
 # ── Helpers ─────────────────────────────────────────────────────────
 
+
 def get_embedding_function(model_name: str | None = None) -> HuggingFaceEmbeddings:
     """Return a HuggingFaceEmbeddings instance.
 
@@ -128,6 +129,7 @@ def _fallback_doc_id(source: str) -> str:
 
 # ── Core ────────────────────────────────────────────────────────────
 
+
 def embed_and_store(
     chunks: list,
     batch_size: int = DEFAULT_BATCH_SIZE,
@@ -190,8 +192,7 @@ def embed_and_store(
         else:
             doc_id = _fallback_doc_id(source)
             logger.warning(
-                f"No metadata.csv entry for '{source}' — "
-                f"using fallback ID '{doc_id}'"
+                f"No metadata.csv entry for '{source}' — using fallback ID '{doc_id}'"
             )
 
         chunk_id = f"{doc_id}_chunk_{n:04d}"

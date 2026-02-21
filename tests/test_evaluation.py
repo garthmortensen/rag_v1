@@ -10,7 +10,7 @@ Run with:
 import os
 import sys
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -37,12 +37,17 @@ class TestEvalDataset(unittest.TestCase):
     def test_questions_are_non_empty_strings(self):
         for i, item in enumerate(EVAL_QUESTIONS):
             self.assertIsInstance(item["question"], str)
-            self.assertTrue(len(item["question"].strip()) > 0, f"Item {i} has empty question")
+            self.assertTrue(
+                len(item["question"].strip()) > 0, f"Item {i} has empty question"
+            )
 
     def test_ground_truths_are_non_empty_strings(self):
         for i, item in enumerate(EVAL_QUESTIONS):
             self.assertIsInstance(item["ground_truth"], str)
-            self.assertTrue(len(item["ground_truth"].strip()) > 0, f"Item {i} has empty ground_truth")
+            self.assertTrue(
+                len(item["ground_truth"].strip()) > 0,
+                f"Item {i} has empty ground_truth",
+            )
 
 
 # ── build_eval_dataset tests ───────────────────────────────────────
