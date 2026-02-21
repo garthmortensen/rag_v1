@@ -8,12 +8,12 @@
 #   3. Queries will automatically use the collection_name set here.
 #
 # Switch back to the original embeddings at any time by changing
-# collection_name back to "stress_test_docs_1k" (no re-embedding needed).
+# collection_name back to "rag_docs_1k" (no re-embedding needed).
 # ────────────────────────────────────────────────────────────────────
 
 chunk_size       = 2000
 chunk_overlap    = 200
-collection_name  = stress_test_docs_2k
+collection_name  = rag_docs_2k
 beep_on_answer   = true
 
 # ── LLM provider ───────────────────────────────────────────────────

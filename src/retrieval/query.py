@@ -1,4 +1,4 @@
-"""Semantic search over the stress testing vector DB.
+"""Semantic search over a ChromaDB-backed vector store.
 
 Embeds a natural-language query with the same HuggingFace model used
 at ingestion time, then performs approximate nearest-neighbor (ANN)
@@ -8,7 +8,7 @@ document chunks.
 Usage (programmatic)::
 
     from src.retrieval.query import retrieve_formatted
-    chunks = retrieve_formatted("What is the peak unemployment rate?")
+    chunks = retrieve_formatted("What are the key points in this document?")
 """
 
 import logging

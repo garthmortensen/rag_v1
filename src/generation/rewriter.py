@@ -13,16 +13,16 @@ Supports two modes:
 Usage (CLI)::
 
     uv run python -m src.generation.rewriter \\
-        corpus/raw_data/proposed_stress_test_model_documentation_credit_risk_models.pdf
+        path/to/document.pdf
 
     uv run python -m src.generation.rewriter \\
-        corpus/raw_data/proposed_stress_test_model_documentation_credit_risk_models.pdf \\
+        path/to/document.pdf \\
         --provider openai --model gpt-4.1 --mode summarize
 
 Usage (programmatic)::
 
     from src.generation.rewriter import rewrite_pdf
-    path = rewrite_pdf("corpus/raw_data/credit_risk_models.pdf")
+    path = rewrite_pdf("path/to/document.pdf")
 """
 
 import logging

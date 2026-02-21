@@ -1,7 +1,7 @@
-"""Streamlit UI for RAG Stress Testing.
+"""Streamlit UI for a general RAG project.
 
 Multi-pane browser interface with sidebar controls and a
-chat-style main area for querying stress testing documents.
+chat-style main area for querying documents.
 
 Answers stream token-by-token using the LCEL chain's
 ``.stream()`` method via ``st.write_stream()``.
@@ -20,8 +20,8 @@ import streamlit.components.v1 as components
 
 # ── Page config (must be first Streamlit call) ──────────────────────
 st.set_page_config(
-    page_title="RAG Stress Testing",
-    page_icon="🏦",
+    page_title="RAG Starter",
+    page_icon="📚",
     layout="wide",
 )
 
@@ -249,7 +249,7 @@ with st.sidebar:
     )
 
 # ── Main area ───────────────────────────────────────────────────────
-st.title("🏦 RAG Stress Testing")
+st.title("📚 RAG Starter")
 st.caption(
     f"Collection: **{selected_collection}** · "
     f"Provider: **{provider}** · "
@@ -382,7 +382,7 @@ for msg in st.session_state.messages:
 
 
 # ── Chat input ──────────────────────────────────────────────────────
-query = st.chat_input("Ask a question about stress testing documents…")
+query = st.chat_input("Ask a question about your documents…")
 
 if query:
     # Show user message

@@ -3,7 +3,7 @@
 ## Project Structure
 
 ```text
-rag_stress_testing_v1/
+rag_project/
 ├── app.py                     # Streamlit web UI (RAG query)
 ├── app_rewriter.py            # Streamlit web UI (PDF rewriter)
 ├── config.txt                 # Pipeline settings (chunk size, collection, LLM provider)
@@ -77,7 +77,7 @@ graph LR
         end
 
         subgraph Load
-            CHROMA[("ChromaDB<br/>corpus/vector_db/<br/>collection: stress_test_docs_2k")]
+            CHROMA[("ChromaDB<br/>corpus/vector_db/<br/>collection: rag_docs_2k")]
         end
 
         LOAD --> CHUNK --> EMBED --> CHROMA
@@ -141,7 +141,7 @@ sequenceDiagram
     participant CHUNK as processor.py<br/>chunk_documents()
     participant EMB as model.py<br/>embed_and_store()
     participant HF as HuggingFaceEmbeddings<br/>all-MiniLM-L6-v2
-    participant CHROMA as 🛢 ChromaDB<br/>stress_test_docs_*
+    participant CHROMA as 🛢 ChromaDB<br/>rag_docs_*
     participant QUERY as query.py<br/>retrieve()
     participant LLM as llm.py<br/>ask()
     participant OLLAMA as rag_chain()<br/>RAG_PROMPT | llm |<br/>StrOutputParser()
@@ -191,7 +191,7 @@ sequenceDiagram
 
     rect rgba(0, 0, 0, 0)
         Note over QUERY,CHROMA: Phase 3 — Retrieve
-        User ->> QUERY: retrieve("What is the peak unemployment rate?")
+        User ->> QUERY: retrieve("What are the key points in this document?")
         QUERY ->> HF: embed_query(query)
         HF -->> QUERY: 384-dim query vector
         QUERY ->> CHROMA: collection.query(query_embedding, n_results=k)
@@ -202,7 +202,7 @@ sequenceDiagram
 
     rect rgba(0, 0, 0, 0)
         Note over LLM,OLLAMA: Phase 4 — Generate (LCEL chain)
-        User ->> LLM: ask("What is the peak unemployment rate?")
+        User ->> LLM: ask("What are the key points in this document?")
         LLM ->> QUERY: retrieve_formatted(query, n_results=k)
         QUERY -->> LLM: list[dict] (retrieved chunks)
         LLM ->> QUERY: retrieve_as_documents(query, n_results=k)
@@ -438,7 +438,7 @@ graph BT
 
 ### ADR-001: Technology Stack
 
-**Context:** Establishing the foundational architecture for the RAG Stress Testing project.
+**Context:** Establishing the foundational architecture for the RAG project.
 
 #### 1.1 Package Management: `uv`
 
@@ -533,7 +533,7 @@ graph BT
 | LLMContextRecall | `ragas.metrics._context_recall` | Did retrieval find the needed information? |
 | FactualCorrectness | `ragas.metrics._factual_correctness` | Does the answer match the ground truth? |
 
-**Dataset:** 8 curated Q&A pairs in `src/evaluation/dataset.py` covering stress testing topics.
+**Dataset:** 8 curated Q&A pairs in `src/evaluation/dataset.py` as a starter set.
 
 ### ADR-004: LangSmith Observability
 
@@ -557,7 +557,7 @@ graph BT
 
 ### ADR-006: Section-Aware PDF Splitting
 
-**Context:** The Federal Reserve's stress test model documentation PDFs (credit risk, market risk, PPNR, aggregation, etc.) are 40–640+ page documents with consistent internal structure: every page carries a header like `Model Documentation: Corporate Model`, top-level sections are lettered (A, B, C, …), and subsections use Roman numerals (i, ii, iii, …). The default `PyPDFLoader` treats each page as an independent document, losing this structural information and producing chunks with no section context.
+**Context:** Some structured PDFs are 40–640+ page documents with consistent internal structure: every page carries a header like `Model Documentation: …`, top-level sections are lettered (A, B, C, …), and subsections use Roman numerals (i, ii, iii, …). The default `PyPDFLoader` treats each page as an independent document, losing this structural information and producing chunks with no section context.
 
 **Decision:** Implement a **section-aware PDF splitter** (`src/ingestion/pdf_section_splitter.py`) that detects structured PDFs via the `Model Documentation:` header pattern and splits them into one Document per subsection, tagged with `section` and `subsection` metadata.
 
@@ -692,7 +692,7 @@ Each chunk's ChromaDB metadata starts with the loader-provided fields (`source`,
 
 - `doc_id`, `title`, `author`, `source_url`, `source_type`
 
-This enables filtered queries like `where={"author": "www.federalreserve.gov"}` or `where={"source_type": "pdf"}`.
+This enables filtered queries like `where={"author": "example.com"}` or `where={"source_type": "pdf"}`.
 
 #### Batch Upserts
 
@@ -703,7 +703,7 @@ ChromaDB's underlying SQLite backend limits the number of parameters per stateme
 #### ChromaDB Configuration
 
 - **Mode**: Embedded/in-process via `chromadb.PersistentClient(path="corpus/vector_db/")`.
-- **Collection**: Driven by `config.txt` (default `"stress_test_docs_1k"`), created via `get_or_create_collection()`.
+- **Collection**: Driven by `config.txt` (default `"rag_docs_1k"`), created via `get_or_create_collection()`.
 - **Index**: HNSW (ChromaDB default) for approximate nearest neighbor search.
 - `corpus/vector_db/` is gitignored.
 
@@ -721,19 +721,19 @@ Step 3: embed_and_store(chunks) → int (count upserted) (model.py)
 | -------- | ----- |
 | `MODEL_NAME` | `"all-MiniLM-L6-v2"` |
 | `VECTOR_DB_DIR` | `"corpus/vector_db"` |
-| `COLLECTION_NAME` | from `config.txt` (default `"stress_test_docs_2k"`) |
+| `COLLECTION_NAME` | from `config.txt` (default `"rag_docs_2k"`) |
 | `METADATA_CSV` | `"corpus/metadata.csv"` |
 | `DEFAULT_BATCH_SIZE` | `500` |
 
-## Retireval visual
+## Retrieval visual
 
 ```text
          ╭─── 0.95 ─────────────────────────╮
        ╭─│── 0.87 ────────────────────────│─╮
      ╭─│─│── 0.74 ─────────────────────│─│─╮
      │ │ │                              │ │ │
-     │ │ │  •stress_test    ◆ QUERY     │ │ │
-     │ │ │   •CCAR                      │ │ │
+    │ │ │  •docs         ◆ QUERY       │ │ │
+    │ │ │   •glossary                  │ │ │
      │ │ │              •credit_risk    │ │ │
      │ │ •Basel_III      •market_risk   │ │ │
      │ •VaR                             │ │ │

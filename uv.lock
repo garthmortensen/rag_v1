@@ -3006,7 +3006,7 @@ wheels = [
 ]
 
 [[package]]
-name = "rag-stress-testing"
+name = "rag-starter"
 version = "0.11.0"
 source = { virtual = "." }
 dependencies = [

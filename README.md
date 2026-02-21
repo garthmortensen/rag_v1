@@ -1,11 +1,9 @@
-# RAG Stress Testing
-
-![CI](https://github.com/garthmortensen/rag_stress_testing/actions/workflows/ci.yml/badge.svg)
+# RAG_V1
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![python](https://img.shields.io/badge/Python-3.13+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![tested with pytest](https://img.shields.io/badge/tested%20with-pytest-46M3D2.svg?logo=pytest&logoColor=white)](https://docs.pytest.org/en/latest/)
 
-This repository contains a Retrieval-Augmented Generation (RAG) for public Stress Testing docs. The goal is to build a RAG using open-source tools to ingest, index, and query publically available stress testing documentation.
+This repository contains a general-purpose Retrieval-Augmented Generation (RAG) project. The goal is to provide a practical, open-source pipeline to ingest documents, build a vector index, and query them via retrieval and grounded answer generation.
 
 ## Setup
 
@@ -59,7 +57,7 @@ Pipeline settings are controlled by `config.txt` at the project root:
 ```text
 chunk_size       = 2000
 chunk_overlap    = 200
-collection_name  = stress_test_docs_2k
+collection_name  = rag_docs_2k
 llm_provider     = ollama
 llm_model        = llama3.2:3b
 ```
@@ -68,7 +66,7 @@ llm_model        = llama3.2:3b
 |-----|-------------|--------|
 | `chunk_size` | Characters per chunk | `2000` |
 | `chunk_overlap` | Overlap between consecutive chunks | `200` |
-| `collection_name` | ChromaDB collection to write/read | `stress_test_docs_2k` |
+| `collection_name` | ChromaDB collection to write/read | `rag_docs_2k` |
 | `llm_provider` | LLM backend: `ollama`, `openai`, `anthropic`, `google` | `ollama` |
 | `llm_model` | Model name/tag for the chosen provider | `llama3.2:3b` |
 
@@ -87,7 +85,7 @@ To switch back, just change `collection_name` and query — no re-ingestion need
 
 ## Data Acquisition
 
-To download the stress testing corpus:
+To download a corpus:
 
 1. **Run the downloader**:
    ```bash
@@ -118,15 +116,15 @@ The pipeline will:
 
 ### Section-aware PDF splitting
 
-Structured PDFs (e.g. the Fed's credit risk, market risk, and PPNR model documentation) are automatically detected and split by section/subsection instead of by page. Each chunk inherits metadata like `section: Corporate Model` and `subsection: Statement of Purpose`, enabling filtered retrieval:
+Structured PDFs with consistent section/subsection headers are automatically detected and split by section/subsection instead of by page. Each chunk inherits metadata like `section` and `subsection`, enabling filtered retrieval:
 
 ```python
 from src.retrieval.query import retrieve_formatted
 
 # Filter by section
 results = retrieve_formatted(
-    "loss given default assumptions",
-    where={"section": "Corporate Model"},
+   "how does this document define key terms?",
+   where={"section": "Introduction"},
 )
 ```
 
@@ -139,7 +137,7 @@ To create a second set of embeddings (e.g. larger chunks), just edit `config.txt
 ```bash
 # Edit config.txt:
 #   chunk_size      = 4000
-#   collection_name = stress_test_docs_4k
+#   collection_name = rag_docs_4k
 
 uv run python -m src.ingestion.processor
 ```
@@ -175,10 +173,10 @@ Query the vector store for relevant document chunks. This is just retrieval — 
 
 ```bash
 # Basic semantic search (top-5 results)
-uv run python -m src.retrieval.query "What is the peak unemployment rate?"
+uv run python -m src.retrieval.query "What are the key points in this document?"
 
 # More results with a metadata filter
-uv run python -m src.retrieval.query "CET1 capital ratio" --top-k 10 --filter source_type=pdf
+uv run python -m src.retrieval.query "definition of terms" --top-k 10 --filter source_type=pdf
 ```
 
 ## Answer Generation (RAG)
@@ -235,8 +233,8 @@ To use a remote provider:
 
 2. **Ask a question**:
    ```bash
-   uv run python -m src.retrieval.query "What is CCAR?" --answer
-   uv run python -m src.retrieval.query "capital ratios" --answer --model phi3
+   uv run python -m src.retrieval.query "What is retrieval-augmented generation?" --answer
+   uv run python -m src.retrieval.query "How does the document define key terms?" --answer --model phi3
    ```
 
 ### CLI flags
@@ -271,7 +269,7 @@ uv run python -m src.evaluation.evaluate --provider openai --model gpt-4o-mini -
 uv run python -m src.evaluation.evaluate --out results.csv
 ```
 
-The evaluation dataset lives in `src/evaluation/dataset.py` — 8 curated question/ground-truth pairs covering stress testing topics (unemployment scenarios, capital ratios, regulatory requirements, etc.).
+The evaluation dataset lives in `src/evaluation/dataset.py` — 8 curated question/ground-truth pairs as a starter. Replace these with questions/answers that match your domain.
 
 ## LangSmith Tracing
 
@@ -334,7 +332,7 @@ uv run streamlit run app_rewriter.py
 ## Project Structure
 
 ```text
-rag_stress_testing/
+rag_project/
 ├── app.py                     # Streamlit web UI (RAG query)
 ├── app_rewriter.py            # Streamlit web UI (PDF rewriter)
 ├── config.txt                 # Pipeline settings (chunk size, collection, LLM provider)
@@ -385,27 +383,27 @@ rag_stress_testing/
 
 Rewrite structured model documentation PDFs in plain English, section by section. The rewriter uses the section-aware PDF splitter to preserve document structure and sends each subsection through the configured LLM.
 
-### Example: Aggregation Models
+### Example
 
-Rewrite or summarize the **Proposed Stress Test Model Documentation — Aggregation Models** PDF (75 pages, covering the Balances, Provisions, Retained Earnings, and Capital models):
+Rewrite or summarize a structured PDF:
 
 ```bash
 # Full plain-English rewrite
 uv run python -m src.generation.rewriter \
-    corpus/raw_data/proposed_stress_test_model_documentation_aggregation_models.pdf
+   path/to/document.pdf
 
 # Condensed summary per section
 uv run python -m src.generation.rewriter \
-    corpus/raw_data/proposed_stress_test_model_documentation_aggregation_models.pdf \
+   path/to/document.pdf \
     --mode summarize
 
 # Use a faster remote model for the rewrite
 uv run python -m src.generation.rewriter \
-    corpus/raw_data/proposed_stress_test_model_documentation_aggregation_models.pdf \
+   path/to/document.pdf \
     --provider openai --model gpt-4.1
 ```
 
-This works on any of the 9 section-split PDFs (credit risk, market risk, PPNR, operational risk, aggregation, GMS, macroeconomic model guides).
+This works best on structured PDFs with consistent section/subsection headers.
 
 ### CLI flags
 
@@ -426,11 +424,11 @@ Output is a Markdown file in `output/rewrites/` with the original section/subsec
 - [x] Configure code quality tools (`ruff`)
 - [x] Set up testing framework (`pytest`)
 - [x] Establish CI/CD pipeline (GitHub Actions)
-- [x] Define initial list of data sources (e.g., Federal Reserve DFAST/CCAR instructions, EBA guidelines)
+- [x] Define initial list of data sources (public docs relevant to the target domain)
 - [ ] Ensure project works across different OS (Linux, Windows) with CI/CD
 
 ### Phase 2: get & process data
-- [x] Build scrapers for public stress testing documentation (PDFs/HTML/TXT)
+- [x] Build scrapers for public documentation (PDFs/HTML/TXT)
 - [x] Move download_data.py to src/ingestion/downloader.py
 - [x] Implement document loaders (HTML, CSV, PDF, Excel, text, Markdown, JSON, Word, PowerPoint)
 - [x] Implement ingestion pipeline (processor.py)
@@ -506,5 +504,5 @@ Output is a Markdown file in `output/rewrites/` with the original section/subsec
 - **Chunk Size**: Configurable (default 2000 chars; previously 1000, tunable for richer context)
 - **Overlap**: Configurable (default 200 chars)
 - **Multiple collections**: Each config produces a separate ChromaDB collection — switch instantly by editing `config.txt`
-- **Section-aware splitting**: Structured model documentation PDFs are automatically split by section/subsection before chunking, producing chunks with richer metadata
+- **Section-aware splitting**: Structured PDFs can be split by section/subsection before chunking, producing chunks with richer metadata
 

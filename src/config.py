@@ -33,7 +33,7 @@ _console = Console()
 DEFAULTS: dict[str, str | int | bool] = {
     "chunk_size": 1000,
     "chunk_overlap": 100,
-    "collection_name": "stress_test_docs_1k",
+    "collection_name": "rag_docs_1k",
     "beep_on_answer": True,
     "llm_provider": "ollama",
     "llm_model": "llama3.2:3b",
@@ -54,7 +54,7 @@ def load_config(path: str = CONFIG_PATH) -> dict[str, str | int | bool]:
 
         # comment
         chunk_size = 6000
-        collection_name = stress_test_docs_6k  # or stress_test_docs_1k
+        collection_name = rag_docs_6k  # or rag_docs_1k
         beep_on_answer = true
 
     Boolean values are recognised as true/yes/1/on and false/no/0/off

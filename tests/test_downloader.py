@@ -187,9 +187,9 @@ class TestGenerateDocId(unittest.TestCase):
 
 
 class TestExtractAuthor(unittest.TestCase):
-    def test_federal_reserve(self):
-        url = "https://www.federalreserve.gov/some/path.pdf"
-        self.assertEqual(downloader.extract_author(url), "www.federalreserve.gov")
+    def test_extracts_domain(self):
+        url = "https://docs.example.org/some/path.pdf"
+        self.assertEqual(downloader.extract_author(url), "docs.example.org")
 
     def test_other_domain(self):
         url = "https://example.com/file.csv"

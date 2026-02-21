@@ -1,7 +1,6 @@
 """Section-aware PDF splitter for structured model documentation.
 
-The Federal Reserve's stress test model documentation PDFs (credit risk,
-market risk, PPNR, etc.) follow a consistent structure:
+Some structured PDFs follow a consistent structure:
 
   - Every page has a header like ``Model Documentation: Corporate Model``
   - Top-level sections are lettered (A, B, C, …)

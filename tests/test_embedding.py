@@ -32,9 +32,9 @@ SAMPLE_CSV_ROWS = [
         "source_url": "https://example.com/credit_risk.pdf",
         "local_path": "corpus/raw_data/credit_risk_models.pdf",
         "title": "Credit Risk Models",
-        "category": "Proposed Stress Test Model Documentation",
-        "source_org": "Federal Reserve",
-        "author": "www.federalreserve.gov",
+        "category": "Sample Category",
+        "source_org": "Example Org",
+        "author": "example.com",
     },
     {
         "doc_id": "1JA8WZ0TJT1",
@@ -43,8 +43,8 @@ SAMPLE_CSV_ROWS = [
         "local_path": "corpus/raw_data/transparency_qas.html",
         "title": "Transparency Q&As",
         "category": "General",
-        "source_org": "Federal Reserve",
-        "author": "www.federalreserve.gov",
+        "source_org": "Example Org",
+        "author": "example.com",
     },
 ]
 
@@ -250,9 +250,9 @@ class TestEmbedAndStore(unittest.TestCase):
         # Enriched fields from CSV
         self.assertEqual(meta["doc_id"], "1JA8WZFYSY0")
         self.assertEqual(meta["title"], "Credit Risk Models")
-        self.assertEqual(meta["category"], "Proposed Stress Test Model Documentation")
-        self.assertEqual(meta["source_org"], "Federal Reserve")
-        self.assertEqual(meta["author"], "www.federalreserve.gov")
+        self.assertEqual(meta["category"], "Sample Category")
+        self.assertEqual(meta["source_org"], "Example Org")
+        self.assertEqual(meta["author"], "example.com")
         self.assertEqual(meta["source_url"], "https://example.com/credit_risk.pdf")
         self.assertEqual(meta["source_type"], "pdf")
 

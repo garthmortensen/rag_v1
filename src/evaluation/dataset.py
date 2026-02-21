@@ -1,7 +1,7 @@
 """Evaluation dataset for ragas scoring.
 
 A curated set of question / ground-truth pairs drawn from the
-stress-testing corpus.  Each entry has:
+active corpus. Each entry has:
 
 * **question** — a natural-language query
 * **ground_truth** — the expected factual answer (used to measure
@@ -13,82 +13,58 @@ want to test a new retrieval / generation behaviour.
 
 EVAL_QUESTIONS: list[dict[str, str]] = [
     {
-        "question": (
-            "What is the peak unemployment rate in the severely "
-            "adverse scenario?"
-        ),
+        "question": "What is retrieval-augmented generation (RAG)?",
         "ground_truth": (
-            "The unemployment rate peaks at 10 percent in the "
-            "severely adverse scenario."
+            "RAG combines retrieval of relevant documents with an LLM, "
+            "grounding the answer in retrieved context."
         ),
     },
     {
-        "question": (
-            "What is the real GDP growth rate in the baseline scenario?"
-        ),
+        "question": "What does the ingestion pipeline do?",
         "ground_truth": (
-            "The baseline scenario projects positive real GDP growth "
-            "consistent with moderate economic expansion."
+            "It loads files, splits text into chunks, embeds the chunks, "
+            "and stores embeddings plus metadata in the vector database."
         ),
     },
     {
-        "question": (
-            "What are the transparency proposals for the stress tests?"
-        ),
+        "question": "What is a ChromaDB collection used for in this project?",
         "ground_truth": (
-            "The Federal Reserve proposed enhanced transparency "
-            "measures including public disclosure of stress test "
-            "models and scenarios to improve accountability."
+            "A collection is a named group of embeddings and documents; "
+            "the project reads/writes the active collection from config."
         ),
     },
     {
-        "question": "What is the CET1 capital ratio minimum?",
+        "question": "What does chunk overlap do?",
         "ground_truth": (
-            "Banks must maintain a minimum Common Equity Tier 1 "
-            "(CET1) capital ratio as part of the stress test "
-            "capital requirements."
+            "Chunk overlap repeats some text between consecutive chunks "
+            "to reduce boundary effects and improve retrieval continuity."
         ),
     },
     {
-        "question": (
-            "What is the House Price Index decline in the severely "
-            "adverse scenario?"
-        ),
+        "question": "What should the system prompt enforce?",
         "ground_truth": (
-            "The severely adverse scenario projects a significant "
-            "decline in the House Price Index."
+            "It should restrict answers to provided context, require citations, "
+            "and require acknowledging when context is insufficient."
         ),
     },
     {
-        "question": (
-            "What does the Dodd-Frank Act require for stress testing?"
-        ),
+        "question": "What is a metadata filter used for during retrieval?",
         "ground_truth": (
-            "The Dodd-Frank Act requires the Federal Reserve to "
-            "conduct annual stress tests on large bank holding "
-            "companies to assess their capital adequacy under "
-            "adverse economic conditions."
+            "It narrows results by restricting matches to documents with specific "
+            "metadata values (e.g., source_type, category)."
         ),
     },
     {
-        "question": (
-            "How are credit risk losses estimated in the stress tests?"
-        ),
+        "question": "What is top-k in retrieval?",
         "ground_truth": (
-            "Credit risk losses are estimated using models that "
-            "project loan losses under stress scenarios based on "
-            "macroeconomic variables and loan-level characteristics."
+            "Top-k is the number of nearest chunks returned by the vector search."
         ),
     },
     {
-        "question": (
-            "What is the global market shock component?"
-        ),
+        "question": "When should you re-run ingestion?",
         "ground_truth": (
-            "The global market shock is an additional component "
-            "applied to firms with significant trading or "
-            "counterparty exposures, modeling instantaneous "
-            "market price changes."
+            "After adding or changing source documents, or after changing chunking "
+            "settings or collection name so embeddings are rebuilt for that collection."
         ),
     },
 ]

@@ -27,7 +27,7 @@ class TestLoadConfigDefaults(unittest.TestCase):
 
     def test_default_collection_name(self):
         cfg = load_config("/nonexistent/config.txt")
-        self.assertEqual(cfg["collection_name"], "stress_test_docs_1k")
+        self.assertEqual(cfg["collection_name"], "rag_docs_1k")
 
 
 class TestLoadConfigParsing(unittest.TestCase):
@@ -64,7 +64,7 @@ class TestLoadConfigParsing(unittest.TestCase):
         cfg = load_config(path)
         self.assertEqual(cfg["chunk_size"], 2000)
         # defaults still present for keys not in file
-        self.assertEqual(cfg["collection_name"], "stress_test_docs_1k")
+        self.assertEqual(cfg["collection_name"], "rag_docs_1k")
 
     def test_malformed_line_is_skipped(self):
         content = "chunk_size = 3000\nno_equals_here\ncollection_name = ok\n"

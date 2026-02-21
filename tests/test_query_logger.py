@@ -58,12 +58,12 @@ class TestLogQuerySession(unittest.TestCase):
 
     def test_log_contains_query(self):
         path = log_query_session(
-            query="What is CCAR?",
+            query="What is retrieval-augmented generation (RAG)?",
             results=_sample_results(),
             logs_dir=self.tmpdir,
         )
         content = open(path, encoding="utf-8").read()
-        self.assertIn("What is CCAR?", content)
+        self.assertIn("What is retrieval-augmented generation (RAG)?", content)
 
     def test_log_contains_chunk_text(self):
         results = _sample_results(3)
@@ -91,11 +91,11 @@ class TestLogQuerySession(unittest.TestCase):
         path = log_query_session(
             query="test",
             results=_sample_results(),
-            collection_name="stress_test_docs_6k",
+            collection_name="rag_docs_6k",
             logs_dir=self.tmpdir,
         )
         content = open(path, encoding="utf-8").read()
-        self.assertIn("stress_test_docs_6k", content)
+        self.assertIn("rag_docs_6k", content)
 
     def test_log_without_answer(self):
         path = log_query_session(

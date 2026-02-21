@@ -64,8 +64,7 @@ PROVIDER_MODELS: dict[str, list[str]] = {
 
 # ── System prompt ───────────────────────────────────────────────────
 SYSTEM_PROMPT = textwrap.dedent("""\
-    You are a precise research assistant for U.S. Federal Reserve
-    stress testing documents.
+    You are a precise research assistant.
 
     RULES:
     1. Answer ONLY from the provided context chunks.

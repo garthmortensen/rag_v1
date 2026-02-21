@@ -411,7 +411,7 @@ The single failure (`test_market_risk_models`) is a pre-existing integration tes
 | `src/generation/llm.py` | LCEL chain (`rag_chain()`, `stream_answer()`, `format_docs()`); `generate_answer()` uses chain internally; `ask()` returns `documents` key; `PROVIDER_MODELS` dict with curated model lists per provider; model selectbox with "Other…" escape hatch |
 | `src/retrieval/query.py` | Added `retrieve_as_documents()` returning `list[Document]` |
 | `app.py` | Replaced threaded timer with `st.write_stream(stream_answer(...))`; model selectbox with `PROVIDER_MODELS`; HTML/JS clipboard copy button; `st.status()` loading indicators; precise timestamps; section overview banner via `scan_pdf_sections()` |
-| `config.txt` | `chunk_size=2000`, `chunk_overlap=200`, `collection_name=stress_test_docs_2k` |
+| `config.txt` | `chunk_size=2000`, `chunk_overlap=200`, `collection_name=rag_docs_2k` |
 | `.env.example` | Added `LANGCHAIN_TRACING_V2` and `LANGCHAIN_API_KEY` |
 | `pyproject.toml` | Added `ragas>=0.4.3` and `datasets>=4.5.0` |
 | `tests/test_generation.py` | Rewrote `TestGenerateAnswer` to mock `rag_chain`; added `TestFormatDocs`, `TestRagChain`, `TestStreamAnswer`; updated `TestAsk` for `documents` key |

@@ -39,10 +39,10 @@ def _fake_chunks(n: int = 3) -> list[dict]:
             "rank": i + 1,
             "id": f"doc_chunk_{i:04d}",
             "distance": 0.3 + i * 0.05,
-            "text": f"Sample text about stress testing topic {i}.",
+            "text": f"Sample text about topic {i}.",
             "metadata": {
                 "source": f"corpus/raw_data/file_{i}.pdf",
-                "title": f"Stress Test Document {i}",
+                "title": f"Sample Document {i}",
                 "doc_id": f"ID{i}",
                 "source_type": "pdf",
             },
@@ -60,8 +60,8 @@ class TestFormatContext(unittest.TestCase):
     def test_formats_chunks_with_source(self):
         """Each chunk is prefixed with [Source: title | path]."""
         result = format_context(_fake_chunks(2))
-        self.assertIn("[Source: Stress Test Document 0", result)
-        self.assertIn("[Source: Stress Test Document 1", result)
+        self.assertIn("[Source: Sample Document 0", result)
+        self.assertIn("[Source: Sample Document 1", result)
 
     def test_separates_chunks_with_divider(self):
         """Chunks are joined by --- dividers."""
