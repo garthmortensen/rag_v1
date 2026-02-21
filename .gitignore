@@ -22,3 +22,15 @@ docker-compose.override.yaml
 # download directory
 corpus/raw_data/
 corpus/download.log
+
+# vector database
+corpus/vector_db/
+
+# query logs
+logs/
+
+mocked_code/
+llm_created_model/
+ouput/
+proposed_stress_test_model_documentation_credit_risk_models_rewrite.md
+output/
